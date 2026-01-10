@@ -67,7 +67,11 @@ class ChatController extends BaseController
     public function text()
     {
 
-        $this->generateMemories(1, 3);
+        return json([
+            'code' => 200,
+            'msg' => '请求成功',
+            'data' => []
+        ]);
     }
 
     /**
