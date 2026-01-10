@@ -62,6 +62,7 @@ class Login extends BaseController
                     'prevtime' => time(),
                     'gender' => '女',
                     'level' => 0,
+                    'avatar' => '/storage/upload/20260111/png/7d7572778214dce1f838b0c2ddbcbee1.png',
                     'invitation_code' => $inviteCode,
                     'money' => 100,
                     'status' => 'normal',
@@ -112,7 +113,7 @@ class Login extends BaseController
             $token = JwtAuth::signToken($tokenData);
             $userinfo = $guestModel->getUserinfo($uid);
 
-            $userinfo['avatar'] = $$guestModel->getUserinfo($uid);
+            $userinfo['avatar'] = cdnurl($userinfo['avatar']);
             return json([
                 'code' => 0,
                 'msg'  => '登录成功',
