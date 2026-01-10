@@ -1,4 +1,4 @@
-# ThinkPHP 6.0
+# ThinkPHP 8.0
 
 > 运行环境要求 PHP7.2+，兼容 PHP8.1
 
