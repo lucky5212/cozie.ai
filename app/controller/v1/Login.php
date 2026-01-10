@@ -65,6 +65,10 @@ class Login extends BaseController
                     'avatar' => '/storage/upload/20260111/png/7d7572778214dce1f838b0c2ddbcbee1.png',
                     'invitation_code' => $inviteCode,
                     'money' => 100,
+                    'descv' => '',
+                    'work' => '',
+                    'tags_ids' => '',
+                    'tags_list' => '',
                     'status' => 'normal',
                     'nickname' => 'User' . generateRandomCode(4),
                 ]);

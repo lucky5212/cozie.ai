@@ -73,4 +73,5 @@ Route::group('api/V1', function () {
 
     // 邀请奖励相关路由
     Route::post('invitationReward', 'app\controller\v1\UserController@invitationReward'); // 邀请奖励
+    Route::get('chatModeList', 'app\controller\v1\ChatController@chatModeList'); // 获取AI角色聊天模式列表接口
 });

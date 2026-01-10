@@ -75,6 +75,20 @@ class ChatController extends BaseController
     }
 
     /**
+     * 获取AI角色聊天模式列表
+     * @return Json
+     */
+    public function chatModeList(): Json
+    {
+
+        $list = Db::name('role_mode_config')->cache(true)->field('id, name, price')->select();
+        return json([
+            'code' => 200,
+            'msg' => '请求成功',
+            'data' => $list
+        ]);
+    }
+    /**
      * 创建角色
      * @return Json
      */
