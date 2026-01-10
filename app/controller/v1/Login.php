@@ -110,6 +110,9 @@ class Login extends BaseController
                 'uid'  => $uid,
             );
             $token = JwtAuth::signToken($tokenData);
+            $userinfo = $guestModel->getUserinfo($uid);
+
+            $userinfo['avatar'] = $$guestModel->getUserinfo($uid);
             return json([
                 'code' => 0,
                 'msg'  => '登录成功',
@@ -117,7 +120,7 @@ class Login extends BaseController
                     'uid'      => $uid,
                     'token'    => $token,
                     'is_guest' => true,
-                    'userinfo' => $guestModel->getUserinfo($uid),
+                    'userinfo' => $userinfo,
                 ]
             ]);
         } catch (\Exception $e) {
