@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片上传测试</title>
+</head>
+<body>
+    <h1>单文件图片上传测试</h1>
+    <form action="http://localhost/tp/public/api/V1/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="image/*">
+        <br><br>
+        <button type="submit">上传图片</button>
+    </form>
+</body>
+</html>
