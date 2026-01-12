@@ -706,7 +706,7 @@ class ChatController extends BaseController
             $userMessage = $params['message'];
             $modeId = $params['mode_id'] ?? '1';
             $message_id = $params['message_id'] ?? '';
-            if ($message_id) {
+            if ($message_id) { // 重新生成聊天有3次免费机会
                 //如果重新生成，需要删除记忆
                 $roleMemory = new RoleMemory();
                 $roleMemory->deleteMemories($userId, $roleId, $message_id);

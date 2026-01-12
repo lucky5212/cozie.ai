@@ -111,6 +111,7 @@ class RoleChatHistory extends Model
         if (!$message_id) {
             $this->save($data);
         } else {
+            $data['is_regenerate'] = 1;
             $this->where('id', $message_id)->update($data);
             $this->id = $message_id;
         }
