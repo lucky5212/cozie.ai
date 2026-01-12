@@ -88,6 +88,89 @@ class ChatController extends BaseController
             'data' => $list
         ]);
     }
+
+    /**
+     * 创建角色草稿
+     * @return Json
+     */
+    public function createRoleDraft(): Json
+    {
+        try {
+            $token = JwtAuth::decodeToken($this->request->header('Access-Token'));
+            if (!$token) {
+                return json([
+                    'code' => 401,
+                    'msg' => '未授权'
+                ]);
+            }
+            $userId = $token['uid'];
+            // 获取请求参数
+            $params = $this->request->post();
+
+            // 准备角色草稿数据，所有字段都是可选的
+            $roleDraftData = [
+                'user_id' => $userId,
+                'avatar_url' => $params['avatar_url'] ?? '',
+                'name' => $params['name'] ?? '',
+                'age' => $params['age'] ?? '',
+                'gender' => $params['gender'] ?? '',
+                'occupation' => $params['occupation'] ?? '',
+                'custom_tags' => $params['custom_tags'] ?? '',
+                'tags' => $params['tags'] ?? '',
+                'desc' => $params['desc'] ?? '',
+                'greet_message' => $params['greet_message'] ?? '',
+                'character' => $params['character'] ?? '',
+                'category_id' => $params['category_id'] ?? 0,
+                'timbre_id' => $params['timbre_id'] ?? 0,
+                'status' => $params['is_private'] ?? 0,
+                'create_time' => date('Y-m-d H:i:s'),
+                'update_time' => date('Y-m-d H:i:s')
+            ];
+
+            // 处理info参数（事件）
+            $info_arr = [];
+            if (!empty($params['info'])) {
+                $info_arr = json_decode($params['info'], true);
+            }
+
+            // 使用事务确保数据一致性
+            $draftId = Db::transaction(function () use ($roleDraftData, $params, $userId, $info_arr) {
+                // 创建角色草稿
+                $draftId = Db::name('role_draft')->insertGetId($roleDraftData);
+
+                // 如果有事件信息，也保存到草稿事件表
+                if (!empty($info_arr)) {
+                    $event_data = [];
+                    foreach ($info_arr as $item) {
+                        $event_data[] = [
+                            'uid' => $userId,
+                            'role_id' => $draftId,
+                            'title' => $item['title'] ?? '',
+                            'content' => $item['content'] ?? '',
+                            'create_time' => date('Y-m-d H:i:s'),
+                            'update_time' => date('Y-m-d H:i:s'),
+                        ];
+                    }
+                    // 批量插入草稿事件
+                    Db::name('role_info')->insertAll($event_data);
+                }
+
+                return $draftId;
+            });
+
+            return json([
+                'code' => 200,
+                'msg' => '角色草稿创建成功',
+                'data' => ['draft_id' => $draftId]
+            ]);
+        } catch (\Exception $e) {
+            return json([
+                'code' => 500,
+                'msg' => '角色草稿创建失败: ' . $e->getMessage()
+            ]);
+        }
+    }
+
     /**
      * 创建角色
      * @return Json
@@ -213,6 +296,9 @@ class ChatController extends BaseController
         }
     }
 
+    /**
+     * 编辑角色
+     */
     public function editRole()
     {
         $roleId = $this->request->param('role_id');
@@ -720,6 +806,39 @@ class ChatController extends BaseController
         }
     }
 
+    // 编辑聊天
+    public function editChatHistory()
+    {
+        // 验证用户身份
+        $token = JwtAuth::decodeToken($this->request->header('Access-Token'));
+        if (!$token) {
+            return json([
+                'code' => 401,
+                'msg' => '未授权'
+            ]);
+        }
+        $userId = $token['uid'];
+        $roleId = $this->request->param('role_id');
+        $messageId = $this->request->param('message_id');
+        $content = $this->request->param('content');
+        if (empty($content)) {
+            return json([
+                'code' => 500,
+                'msg' => 'content不能为空'
+            ]);
+        }
+        if (empty($userId) || empty($roleId) || empty($messageId)) {
+            return json([
+                'code' => 500,
+                'msg' => 'user_id, role_id, message_id不能为空'
+            ]);
+        }
+        Db::name('role_chat_history')->where(['id' => $messageId, 'user_id' => $userId, 'role_id' => $roleId])->update(['answer' => $content]);
+        return json([
+            'code' => 200,
+            'msg' => '请求成功',
+        ]);
+    }
     // 获取我的角色列表
     public function myRoleList()
     {

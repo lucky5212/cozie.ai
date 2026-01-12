@@ -74,4 +74,8 @@ Route::group('api/V1', function () {
     // 邀请奖励相关路由
     Route::post('invitationReward', 'app\controller\v1\UserController@invitationReward'); // 邀请奖励
     Route::get('chatModeList', 'app\controller\v1\ChatController@chatModeList'); // 获取AI角色聊天模式列表接口
+    Route::post('editChatHistory', 'app\controller\v1\ChatController@editChatHistory'); // 编辑聊天记录
+    Route::post('createRoleDraft', 'app\controller\v1\ChatController@createRoleDraft'); // 创建角色草稿
+
+
 });
