@@ -12,12 +12,11 @@ use Exception;
 use think\facade\Db;
 use app\common\JwtAuth;
 use app\model\MoneyLog;
+use app\model\UserIncantation;
 use app\model\UserSignLog;
-use app\model\AIUserFollow;
 use app\model\UserFollow;
 use app\model\Task;
-use app\model\UserTask;
-use app\model\TaskRewardLog;
+
 
 class UserController extends BaseController
 {
@@ -732,5 +731,117 @@ class UserController extends BaseController
         }
 
         return json(['code' => 200, 'msg' => '兑换成功']);
+    }
+
+    /**
+     * 添加用户内容
+     * @return Json
+     */
+    public function saveIncantation(): Json
+    {
+        // 验证用户身份
+        $token = JwtAuth::decodeToken($this->request->header('Access-Token'));
+        if (!$token) {
+            return json([
+                'code' => 401,
+                'msg' => '未授权'
+            ]);
+        }
+        $userId = $token['uid'];
+
+        // 获取请求参数
+        $param = $this->request->post();
+
+        // 验证参数
+        $validate = $this->validate($param, [
+            'title|标题' => 'require|max:20',
+            'content|内容' => 'max:120',
+        ]);
+        if ($validate !== true) {
+            return json([
+                'code' => 400,
+                'msg' => $validate
+            ]);
+        }
+        $title = $param['title'];
+        $content = $param['content'] ?? '';
+
+        try {
+            // 准备数据，type默认为2（用户）
+            $data = [
+                'user_id' => $userId,
+                'title' => $title,
+                'content' => $content,
+                'type' => 2,
+                'create_time' => time()
+            ];
+            // 插入数据
+            $id = Db::name('user_incantation')->insertGetId($data);
+            return json([
+                'code' => 200,
+                'msg' => '添加成功',
+                'data' => [
+                    'id' => $id
+                ]
+            ]);
+        } catch (Exception $e) {
+            return json([
+                'code' => 500,
+                'msg' => '添加失败：' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * 获取用户咒语列表
+     * @return Json
+     */
+    public function getIncantationList(): Json
+    {
+        // 验证用户身份
+        $token = JwtAuth::decodeToken($this->request->header('Access-Token'));
+        if (!$token) {
+            return json([
+                'code' => 401,
+                'msg' => '未授权'
+            ]);
+        }
+        $userId = $token['uid'];
+
+        // 获取分页参数
+        $page = max(1, (int)$this->request->get('page', 1));
+        $limit = max(1, min(50, (int)$this->request->get('limit', 20)));
+
+        try {
+            // 查询用户咒语列表，type=2（用户）
+            $query = Db::name('user_incantation')
+                ->where(['user_id' => $userId, 'type' => 2])
+                ->order('create_time', 'desc');
+
+            // 获取总记录数
+            $totalCount = $query->count();
+            // 获取当前页数据
+            $list = $query->page($page, $limit)->select()->toArray();
+            // 处理头像URL
+            foreach ($list as  $key => $item) {
+                $list[$key]['create_time'] = date('Y-m-d H:i:s', $item['create_time']);
+            }
+            return json([
+                'code' => 200,
+                'msg' => '请求成功',
+                'data' => [
+                    'current_page' => (int)$page,
+                    'page_size' => (int)$limit,
+                    'total_count' => $totalCount,
+                    'total_pages' => ceil($totalCount / $limit),
+                    'data' => $list
+                ]
+            ]);
+        } catch (Exception $e) {
+            return json([
+                'code' => 500,
+                'msg' => '获取列表失败：' . $e->getMessage()
+            ]);
+        }
     }
 }
