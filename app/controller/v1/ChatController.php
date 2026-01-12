@@ -9,6 +9,7 @@ use app\model\InnerThought;
 use app\model\RoleTag;
 use app\model\Role;
 use app\model\RoleChatHistory;
+use app\model\RoleDraft;
 use app\model\RoleMemory;
 use app\model\RoleUserChat;
 use app\model\User;
@@ -895,8 +896,8 @@ class ChatController extends BaseController
                 'msg' => 'role_id不能为空'
             ]);
         }
-        $role = new Role();
-        $role->where('id', $roleId)->where('user_id', $userId)->where('status', 'in', [0, 2])->delete();
+        $role = new RoleDraft();
+        $role->where('id', $roleId)->where('user_id', $userId)->delete();
         return json([
             'code' => 200,
             'msg' => '请求成功',

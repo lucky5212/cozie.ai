@@ -85,28 +85,49 @@ class Role extends Model
     public function userRoleList($userId, $limit = 10, $page = 1, $status = 1)
     {
 
-        $where = [];
-        if ($status == 2) {
-            $where = ['r.status' => ['in', [0, 2]]];
-        } else {
-            $where = ['r.status' => $status];
+        switch ($status) {
+            case 1:
+                // 查询用户创建的角色列表，关联RoleUserChat获取最大聊天数
+                $query = $this->alias('r')
+                    ->where(['r.user_id' => $userId])
+                    ->where('r.status', 'in', [0, 1, 2])
+                    ->join('role_user_chat ruc', 'r.id = ruc.role_id AND ruc.user_id = r.user_id', 'left')
+                    ->field([
+                        'r.id',
+                        'r.name',
+                        'r.avatar_url',
+                        'r.status',
+                        'r.age',
+                        'r.occupation',
+                        'r.chat_num',
+                        'r.user_num',
+                        'ruc.continuous_days'
+                    ])
+                    ->order('r.create_time', 'desc');
+                break;
+            case 2:
+                $roleDetail = new RoleDraft();
+                $query = $roleDetail->where(['user_id' => $userId])->field('id,name,avatar_url,status,age,occupation,chat_num,user_num')->order('create_time', 'desc');
+                break;
+            case 3:
+                $where = ['r.status' => 3];
+                $query = $this->alias('r')
+                    ->where(['r.user_id' => $userId])
+                    ->where($where)
+                    ->field([
+                        'r.id',
+                        'r.name',
+                        'r.avatar_url',
+                        'r.age',
+                        'r.status',
+                        'r.occupation',
+                        'r.chat_num',
+                        'r.user_num',
+                        'ruc.continuous_days'
+                    ])
+                    ->order('r.create_time', 'desc');
+                break;
         }
-        // 查询用户创建的角色列表，关联RoleUserChat获取最大聊天数
-        $query = $this->alias('r')
-            ->where(['r.user_id' => $userId])
-            ->where($where)
-            ->join('role_user_chat ruc', 'r.id = ruc.role_id AND ruc.user_id = r.user_id', 'left')
-            ->field([
-                'r.id',
-                'r.name',
-                'r.avatar_url',
-                'r.age',
-                'r.occupation',
-                'r.chat_num',
-                'r.user_num',
-                'ruc.continuous_days'
-            ])
-            ->order('r.create_time', 'desc');
 
 
         // 获取总记录数
