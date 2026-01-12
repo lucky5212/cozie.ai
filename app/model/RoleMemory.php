@@ -23,10 +23,10 @@ class RoleMemory extends Model
      * @param array $memories 记忆数据
      * @return bool
      */
-    public function saveMemories($userId, $roleId, $memories)
+    public function saveMemories($userId, $roleId, $memories, $message_id)
     {
         // 开始事务
-        return $this->transaction(function () use ($userId, $roleId, $memories) {
+        return $this->transaction(function () use ($userId, $roleId, $memories, $message_id) {
             // 先删除该用户和角色的旧记忆
             // $this->where(['user_id' => $userId, 'role_id' => $roleId])->delete();
 
@@ -41,6 +41,7 @@ class RoleMemory extends Model
                     'sub_category' => $memory['sub_category'],
                     'create_time' => time(),
                     'update_time' => time(),
+                    'chat_id' => $message_id,
                 ];
             }
             // 批量插入记忆数据
@@ -106,5 +107,16 @@ class RoleMemory extends Model
             ->order('create_time', 'asc')
             ->select()
             ->toArray();
+    }
+    /**
+     * 删除用户和角色的记忆数据
+     * @param int $userId 用户ID
+     * @param int $roleId 角色ID
+     * @param string $message_id 消息ID
+     * @return bool
+     */
+    public function deleteMemories($userId, $roleId, $message_id)
+    {
+        return $this->where(['user_id' => $userId, 'role_id' => $roleId, 'chat_id' => $message_id])->delete();
     }
 }

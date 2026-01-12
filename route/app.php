@@ -76,6 +76,7 @@ Route::group('api/V1', function () {
     Route::get('chatModeList', 'app\controller\v1\ChatController@chatModeList'); // 获取AI角色聊天模式列表接口
     Route::post('editChatHistory', 'app\controller\v1\ChatController@editChatHistory'); // 编辑聊天记录
     Route::post('createRoleDraft', 'app\controller\v1\ChatController@createRoleDraft'); // 创建角色草稿
+    Route::get('roleDraftInfo', 'app\controller\v1\ChatController@roleDraftInfo'); // 草稿详情
 
 
 });

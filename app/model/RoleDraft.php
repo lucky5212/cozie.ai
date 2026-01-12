@@ -170,12 +170,16 @@ class RoleDraft extends Model
         } else {
             return false;
         }
+        $tagString   = '';
+        if ($role_info['tags']) {
+            // 获取标签 
+            $tagString = RoleTag::where('id', 'in', $role_info['tags'])
+                ->where('status', 1)
+                ->value('GROUP_CONCAT(name SEPARATOR ",")');
+        }
 
-        // 获取标签 
-        $tagString = RoleTag::where('id', 'in', $role_info['tags'])
-            ->where('status', 1)
-            ->value('GROUP_CONCAT(name SEPARATOR ",")');
         $role_info['tag_string'] = $tagString;
+
         return $role_info;
     }
 }

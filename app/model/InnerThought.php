@@ -89,4 +89,16 @@ class InnerThought extends Model
             ->select()
             ->toArray();
     }
+
+    /**
+     * 删除用户和角色的内心想法数据
+     * @param int $userId 用户ID
+     * @param int $roleId 角色ID
+     * @param string $message_id 消息ID
+     * @return bool
+     */
+    public function deleteMemories($userId, $roleId, $message_id)
+    {
+        return $this->where(['user_id' => $userId, 'role_id' => $roleId, 'history_id' => $message_id])->delete();
+    }
 }

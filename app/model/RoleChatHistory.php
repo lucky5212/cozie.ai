@@ -40,7 +40,18 @@ class RoleChatHistory extends Model
 
 
 
-    public function saveChatHistory($userId, $roleId, $userMessage, $assistantMessage, $score, $score_reason)
+    /**
+     * 保存用户和角色的聊天记录
+     * @param int $userId 用户ID
+     * @param int $roleId 角色ID
+     * @param string $userMessage 用户消息
+     * @param string $assistantMessage 助手消息
+     * @param int $score 分数
+     * @param string $score_reason 分数原因
+     * @param string $message_id 消息ID
+     * @return string 聊天记录ID
+     */
+    public function saveChatHistory($userId, $roleId, $userMessage, $assistantMessage, $score, $score_reason, $message_id)
     {
         // if ($score != 0) {
         //     User::where('id', 1)->inc('favorability', $score)->update();
@@ -85,7 +96,8 @@ class RoleChatHistory extends Model
             $role->where('id', $roleId)->inc('chat_num', 1)->update();
         }
 
-        $this->save([
+
+        $data = [
             'user_id' => $userId,
             'role_id' => $roleId,
             'question' => $userMessage,
@@ -95,7 +107,13 @@ class RoleChatHistory extends Model
             'create_time' => time(),
             'update_time' => time(),
             'is_read' => 0,
-        ]);
+        ];
+        if (!$message_id) {
+            $this->save($data);
+        } else {
+            $this->where('id', $message_id)->update($data);
+            $this->id = $message_id;
+        }
         return $this->id;
     }
 

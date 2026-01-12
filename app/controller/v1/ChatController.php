@@ -668,6 +668,23 @@ class ChatController extends BaseController
     }
 
     /**
+     * 重新生成聊天
+     */
+
+    // 重新生成聊天
+    public function regenerateChat()
+    {
+        $roleId = $this->request->param('role_id', '');
+
+        if (empty($roleId)) {
+            return json([
+                'code' => 500,
+                'msg' => 'role_id不能为空'
+            ]);
+        }
+    }
+
+    /**
      * 与角色聊天
      * @return Json
      */
@@ -688,6 +705,15 @@ class ChatController extends BaseController
             $roleId = $params['role_id'];
             $userMessage = $params['message'];
             $modeId = $params['mode_id'] ?? '1';
+            $message_id = $params['message_id'] ?? '';
+            if ($message_id) {
+                //如果重新生成，需要删除记忆
+                $roleMemory = new RoleMemory();
+                $roleMemory->deleteMemories($userId, $roleId, $message_id);
+                //删除角色心声
+                $innerThought = new InnerThought();
+                $innerThought->deleteMemories($userId, $roleId, $message_id);
+            }
 
             // 获取聊天模式 验证模式ID是否存在
             $modeData = Db::name('role_mode_config')->where(['id' => $modeId])->find();
@@ -778,7 +804,7 @@ class ChatController extends BaseController
             }
             // halt(['userMessage' => $userMessage, 'response' => $response, 'score' => $score, 'score_reason' => $score_reason]);
             $roleChatHistory = new RoleChatHistory();
-            $historyId = $roleChatHistory->saveChatHistory($userId, $roleId, $userMessage, $response, $score, $score_reason);
+            $historyId = $roleChatHistory->saveChatHistory($userId, $roleId, $userMessage, $response, $score, $score_reason, $message_id);
             $data = [
                 'message_id' => $historyId,
                 'score' => $score,
@@ -902,6 +928,32 @@ class ChatController extends BaseController
             'code' => 200,
             'msg' => '请求成功',
             'data' => $role
+        ]);
+    }
+
+    // 草稿详情 
+    public function roleDraftInfo()
+    {
+        $roleId = $this->request->param('role_id', '');
+
+        if (empty($roleId)) {
+            return json([
+                'code' => 500,
+                'msg' => 'role_id不能为空'
+            ]);
+        }
+        $role = new RoleDraft();
+        $role_info = $role->getRoleInfo($roleId);
+        if (!$role_info) {
+            return json([
+                'code' => 500,
+                'msg' => '角色不存在'
+            ]);
+        }
+        return json([
+            'code' => 200,
+            'msg' => '请求成功',
+            'data' => $role_info
         ]);
     }
 
@@ -1144,7 +1196,6 @@ class ChatController extends BaseController
                 ->limit(5) // 获取最近5条消息用于总结
                 ->select()
                 ->reverse();
-
             $memoryPrompt = $this->buildMemorySummaryPrompt($chatHistory);
             // 调用OpenAI API生成记忆
             $memoriesResponse = OpenRouterService::chat([$memoryPrompt]);
@@ -1153,7 +1204,7 @@ class ChatController extends BaseController
             // 保存记忆数据
             if (isset($memories['memories']) && is_array($memories['memories'])) {
                 $roleMemory = new \app\model\RoleMemory();
-                $roleMemory->saveMemories($userId, $roleId, $memories['memories']);
+                $roleMemory->saveMemories($userId, $roleId, $memories['memories'], $chatHistory[4]['id']);
             }
 
             Log::info('记忆总结任务执行成功', [
