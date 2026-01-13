@@ -23,7 +23,7 @@ class RoleMemory extends Model
      * @param array $memories 记忆数据
      * @return bool
      */
-    public function saveMemories($userId, $roleId, $memories, $message_id)
+    public function saveMemories($userId, $roleId, $memories, $message_id = 0)
     {
         // 开始事务
         return $this->transaction(function () use ($userId, $roleId, $memories, $message_id) {
@@ -118,5 +118,53 @@ class RoleMemory extends Model
     public function deleteMemories($userId, $roleId, $message_id)
     {
         return $this->where(['user_id' => $userId, 'role_id' => $roleId, 'chat_id' => $message_id])->delete();
+    }
+
+
+    /**
+     * 获取用户和角色的记忆胶囊列表
+     * @param int $userId 用户ID
+     * @param int $roleId 角色ID
+     * @param int $type 记忆类型
+     * @param int $page 页码
+     * @param int $limit 每页记录数
+     * @return array
+     */
+    public function getMemoryCapsuleList($userId, $roleId, $sub_category, $page = 1, $limit = 10)
+    {
+        $count = $this->where(['user_id' => $userId, 'role_id' => $roleId, 'status' => 1, 'sub_category' => $sub_category])
+            ->count();
+        $result = $this->where(['user_id' => $userId, 'role_id' => $roleId, 'status' => 1, 'sub_category' => $sub_category])
+            ->order('create_time', 'asc')
+            ->page($page, $limit)
+            ->field('id,content,create_time')
+            ->select()
+            ->toArray();
+        if ($sub_category == 'memory') {
+            foreach ($result as $key => $item) {
+                $result[$key]['create_time'] = date('Y-m-d', strtotime($item['create_time']));
+            }
+        } elseif ($sub_category == 'daily_summary') {
+            foreach ($result as $key => $item) {
+                $result[$key]['create_time'] = date('Y-m', strtotime($item['create_time']));
+            }
+        }
+        return [
+            'total_count' => $count, // 总记录数
+            'total_pages' => ceil($count / $limit), // 最后一页的页码
+            'data' => $result, // 当前页的数据
+        ];
+    }
+
+    // 删除记忆胶囊
+    public function delMemoryCapsule($userId, $memoryId)
+    {
+        return $this->where(['user_id' => $userId, 'id' => $memoryId])->delete();
+    }
+
+    // 编辑记忆胶囊
+    public function editMemoryCapsule($userId, $memoryId, $data)
+    {
+        return $this->where(['user_id' => $userId, 'id' => $memoryId])->update(['content' => $data]);
     }
 }

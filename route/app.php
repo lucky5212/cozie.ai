@@ -50,19 +50,24 @@ Route::group('api/V1', function () {
     Route::get('roleInfo', 'app\controller\v1\ChatController@roleInfo'); // 角色详情
     Route::post('editRole', 'app\controller\v1\ChatController@editRole'); // 编辑角色
     Route::get('getRoleEventList', 'app\controller\v1\ChatController@getRoleEventList'); // 角色事件列表
-    Route::get('getDailySummaryList', 'app\controller\v1\ChatController@getDailySummaryList'); // 角色专属日记
+    Route::get('getDailySummaryList', 'app\controller\v1\ChatController@getDailySummaryList'); // 角色专属日记列表
+
+
+
     Route::get('getRoleHeartList', 'app\controller\v1\ChatController@getRoleHeartList'); // 角色心声列表
     Route::get('readMessage', 'app\controller\v1\ChatController@readMessage'); // 读取消息
 
     Route::post('saveCollection', 'app\controller\v1\CollectionController@saveCollection'); // 切换角色收藏状态
     Route::get('getUserCollections', 'app\controller\v1\CollectionController@getUserCollections'); // 获取用户收藏列表
     Route::get('chatRoleUserList', 'app\controller\v1\ChatController@chatRoleUserList'); //用户最近聊天列表
-    Route::delete('chatRoleUser/:chat_id', 'app\controller\v1\ChatController@delChatRoleUser'); //删除用户最近聊天
+    Route::delete('chatRoleUser/:chat_id', 'app\controller\v1\ChatController@delChatRoleUser'); //删除用户最近聊天记录
     Route::get('messageList', 'app\controller\v1\Index@messageList'); // 获取用户消息列表
     Route::post('messageRead', 'app\controller\v1\Index@messageRead'); // 标记消息为已读
     Route::get('myRoleList', 'app\controller\v1\ChatController@myRoleList'); // 获取用户角色列表
     Route::delete('roles/:role_id', 'app\controller\v1\ChatController@delRole'); // 删除角色
     Route::delete('chatHistory/:role_id', 'app\controller\v1\ChatController@delChatHistory'); // 删除角色聊天记录
+
+
     Route::post('signIn', 'app\controller\v1\UserController@signIn'); // 用户签到
     Route::get('diamondDetails', 'app\controller\v1\UserController@diamondDetails'); // 获取用户钻石明细
     Route::post('toggleFollow', 'app\controller\v1\UserController@toggleFollow'); // 关注/取消关注角色
@@ -81,8 +86,9 @@ Route::group('api/V1', function () {
     Route::get('roleDraftInfo', 'app\controller\v1\ChatController@roleDraftInfo'); // 草稿详情
     Route::post('saveIncantation', 'app\controller\v1\UserController@saveIncantation'); // 保存咒语
     Route::get('getIncantationList', 'app\controller\v1\UserController@getIncantationList'); // 获取咒语列表
-
     Route::post('chatHistoryCollect', 'app\controller\v1\CollectionController@chatHistoryCollect'); // 收藏聊天记录
     Route::get('getUserChatCollections', 'app\controller\v1\CollectionController@getUserChatCollections'); // 获取用户收藏列表
-
+    Route::get('getMemoryCapsuleList', 'app\controller\v1\MemoryController@getMemoryCapsuleList'); // 获取记忆胶囊列表
+    Route::delete('memory/:memory_id', 'app\controller\v1\MemoryController@delMemoryCapsule'); //删除记忆胶囊
+    Route::post('editMemoryCapsule', 'app\controller\v1\MemoryController@editMemoryCapsule'); //编辑记忆胶囊
 });

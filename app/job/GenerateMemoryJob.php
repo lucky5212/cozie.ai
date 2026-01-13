@@ -41,7 +41,7 @@ class GenerateMemoryJob
             // 保存记忆数据
             if (isset($memories['memories']) && is_array($memories['memories'])) {
                 $roleMemory = new \app\model\RoleMemory();
-                $roleMemory->saveMemories($userId, $roleId, $memories['memories']);
+                $roleMemory->saveMemories($userId, $roleId, $memories['memories'], 0);
             }
 
             Log::info('记忆总结异步任务执行成功', [
