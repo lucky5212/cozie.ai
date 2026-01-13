@@ -618,7 +618,7 @@ class ChatController extends BaseController
         }
         $userId = $token['uid'];
         $roleMemory = new RoleMemory();
-        $result = $roleMemory->DailySummaryList($userId, $role_id, $page, $limit);
+        $result = $roleMemory->DailyDiaryList($userId, $role_id, $page, $limit);
         return json([
             'code' => 200,
             'msg' => '请求成功',
@@ -632,6 +632,32 @@ class ChatController extends BaseController
         ]);
     }
 
+    // 删除心声
+    public function delRoleHeart()
+    {
+        $params = $this->request->param();
+        if (empty($params['heart_id'])) {
+            return json([
+                'code' => 500,
+                'msg' => 'heart_id不能为空'
+            ]);
+        }
+        $token = JwtAuth::decodeToken($this->request->header('Access-Token'));
+        if (!$token) {
+            return json([
+                'code' => 401,
+                'msg' => '未授权'
+            ]);
+        }
+        $userId = $token['uid'];
+        $innerThought = new InnerThought();
+        $innerThought->delRoleHeart($userId, $params['heart_id']);
+        return json([
+            'code' => 200,
+            'msg' => '删除成功',
+            'data' => []
+        ]);
+    }
 
     // 角色心声列表
     public function getRoleHeartList()

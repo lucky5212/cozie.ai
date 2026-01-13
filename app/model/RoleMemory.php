@@ -59,10 +59,10 @@ class RoleMemory extends Model
      * @param int $limit 每页记录数
      * @return array
      */
-    public function DailySummaryList($userId, $roleId, $page = 1, $limit = 10)
+    public function DailyDiaryList($userId, $roleId, $page = 1, $limit = 10)
     {
-        $count = $this->where(['user_id' => $userId, 'role_id' => $roleId, 'sub_category' => 'daily_summary'])->count();
-        $result =   $this->where(['user_id' => $userId, 'role_id' => $roleId, 'sub_category' => 'daily_summary', 'status' => 1])
+        $count = $this->where(['user_id' => $userId, 'role_id' => $roleId, 'sub_category' => 'daily_diary'])->count();
+        $result =   $this->where(['user_id' => $userId, 'role_id' => $roleId, 'sub_category' => 'daily_diary', 'status' => 1])
             ->order('create_time', 'asc')
             ->page($page, $limit)
             ->select()

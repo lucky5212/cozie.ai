@@ -55,6 +55,7 @@ Route::group('api/V1', function () {
 
 
     Route::get('getRoleHeartList', 'app\controller\v1\ChatController@getRoleHeartList'); // 角色心声列表
+    Route::delete('heart/:heart_id', 'app\controller\v1\ChatController@delRoleHeart'); // 删除角色心声
     Route::get('readMessage', 'app\controller\v1\ChatController@readMessage'); // 读取消息
 
     Route::post('saveCollection', 'app\controller\v1\CollectionController@saveCollection'); // 切换角色收藏状态
@@ -91,4 +92,5 @@ Route::group('api/V1', function () {
     Route::get('getMemoryCapsuleList', 'app\controller\v1\MemoryController@getMemoryCapsuleList'); // 获取记忆胶囊列表
     Route::delete('memory/:memory_id', 'app\controller\v1\MemoryController@delMemoryCapsule'); //删除记忆胶囊
     Route::post('editMemoryCapsule', 'app\controller\v1\MemoryController@editMemoryCapsule'); //编辑记忆胶囊
+
 });

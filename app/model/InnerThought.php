@@ -101,4 +101,9 @@ class InnerThought extends Model
     {
         return $this->where(['user_id' => $userId, 'role_id' => $roleId, 'history_id' => $message_id])->delete();
     }
+
+    public function delRoleHeart($userId, $heartId)
+    {
+        return $this->where(['user_id' => $userId, 'id' => $heartId])->delete();
+    }
 }
