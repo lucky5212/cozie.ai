@@ -734,7 +734,7 @@ class UserController extends BaseController
     }
 
     /**
-     * 添加用户内容
+     * 添加用户咒语
      * @return Json
      */
     public function saveIncantation(): Json
@@ -766,6 +766,13 @@ class UserController extends BaseController
         $title = $param['title'];
         $content = $param['content'] ?? '';
 
+        $count = Db::name('user_incantation')->where('user_id', $userId)->count();
+        if ($count >= 20) {
+            return json([
+                'code' => 400,
+                'msg' => '用户已创建过20个咒语，无法创建更多'
+            ]);
+        }
         try {
             // 准备数据，type默认为2（用户）
             $data = [

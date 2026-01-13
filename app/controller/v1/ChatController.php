@@ -134,6 +134,13 @@ class ChatController extends BaseController
                 $info_arr = json_decode($params['info'], true);
             }
 
+            $count = Db::name('role_draft')->where('user_id', $userId)->count();
+            if ($count >= 20) {
+                return json([
+                    'code' => 400,
+                    'msg' => '用户已创建过20个角色草稿，无法创建更多'
+                ]);
+            }
             // 使用事务确保数据一致性
             $draftId = Db::transaction(function () use ($roleDraftData, $params, $userId, $info_arr) {
                 // 创建角色草稿

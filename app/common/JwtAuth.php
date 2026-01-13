@@ -18,31 +18,30 @@ class JwtAuth
         $payload = [
             'iss' => 'http://example.org',
             'aud' => '',
-        	'nbf' => time()-2,//在此之前不可用
-            'iat' => time(),//发布时间
-        	'exp' => time()+3153600000,//过期时间
-			'data' => $data, //自定义
+            'nbf' => time() - 2, //在此之前不可用
+            'iat' => time(), //发布时间
+            'exp' => time() + 3153600000, //过期时间
+            'data' => $data, //自定义
         ];
-	// self::$key调用上面的private static $key = 'example_key';
+        // self::$key调用上面的private static $key = 'example_key';
         return JWT::encode($payload, self::$key, 'HS256');
     }
 
     public static function checkToken($token)
     {
-       try {
+        try {
             $decoded = JWT::decode($token, new Key(self::$key, 'HS256'));
-            return ['code' => 200,'msg' => 'token有效'];
+            return ['code' => 200, 'msg' => 'token有效'];
         } catch (SignatureInvalidException $e) { //签名不正确
-			 return ['code' => 204,'msg' => '签名不正确'];
-		} catch (BeforeValidException $e) { // 签名在某个时间点之后才能用
-			return ['code' => 203,'msg' => 'token未生效'];
-		} catch (ExpiredException $e) { // token过期
-			return ['code' => 202,'msg' => '登录超时，请重新登录'];
-
-		} catch (\Throwable $e) { //其他错误
-			// return ['code' => 500,'msg' => $e->getMessage()];
-            return ['code' => 204,'msg' => '签名不正确'];
-		}
+            return ['code' => 204, 'msg' => '签名不正确'];
+        } catch (BeforeValidException $e) { // 签名在某个时间点之后才能用
+            return ['code' => 203, 'msg' => 'token未生效'];
+        } catch (ExpiredException $e) { // token过期
+            return ['code' => 202, 'msg' => '登录超时，请重新登录'];
+        } catch (\Throwable $e) { //其他错误
+            // return ['code' => 500,'msg' => $e->getMessage()];
+            return ['code' => 204, 'msg' => '签名不正确'];
+        }
     }
     /**
      * 解码token
@@ -59,7 +58,6 @@ class JwtAuth
             $arr = (array) $decoded;
 
             return (array) $arr['data'];
-        
         } catch (SignatureInvalidException $e) { //签名不正确
             $res['info'] = "签名不正确";
             return $res;
@@ -75,4 +73,3 @@ class JwtAuth
         }
     }
 }
-

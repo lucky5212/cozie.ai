@@ -8,6 +8,8 @@
 // +----------------------------------------------------------------------
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
+
+use fast\Rsa;
 use think\facade\Route;
 
 
@@ -79,5 +81,8 @@ Route::group('api/V1', function () {
     Route::get('roleDraftInfo', 'app\controller\v1\ChatController@roleDraftInfo'); // 草稿详情
     Route::post('saveIncantation', 'app\controller\v1\UserController@saveIncantation'); // 保存咒语
     Route::get('getIncantationList', 'app\controller\v1\UserController@getIncantationList'); // 获取咒语列表
+
+    Route::post('chatHistoryCollect', 'app\controller\v1\CollectionController@chatHistoryCollect'); // 收藏聊天记录
+    Route::get('getUserChatCollections', 'app\controller\v1\CollectionController@getUserChatCollections'); // 获取用户收藏列表
 
 });
