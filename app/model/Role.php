@@ -195,7 +195,7 @@ class Role extends Model
             ->with(['userProfile' => function (Query $query) {
                 $query->field('id,nickname,avatar');
             }])
-            ->field('id,name,desc,avatar_url,category_id,user_id,chat_num,user_num,create_time,greet_message,timbre_id,custom_tags')
+            ->field('id,name,desc,avatar_url,category_id,user_id,chat_num,user_num,create_time,greet_message,timbre_id,custom_tags,tags')
             ->where(['id' => $roleId])
             ->find();
         if ($role_info) {
@@ -208,7 +208,8 @@ class Role extends Model
         $tagString = RoleTag::where('id', 'in', $role_info['tags'])
             ->where('status', 1)
             ->value('GROUP_CONCAT(name SEPARATOR ",")');
-        $role_info['tag_string'] = $tagString;
+        $role_info['tag_string'] = $tagString ?? '';
+        $role_info['tags'] = $role_info['tags'] ?? '';
         return $role_info;
     }
 }

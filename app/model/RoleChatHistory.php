@@ -140,7 +140,8 @@ class RoleChatHistory extends Model
             ->count();
 
         $totalPages = ceil($totalCount / $limit);
-        return ['chat_history' => $chatHistory, 'total_count' => $totalCount, 'total_pages' => $totalPages];
+
+        return ['data' => $chatHistory, 'total_count' => $totalCount, 'total_pages' => $totalPages];
     }
 
     // 删除角色聊天记录

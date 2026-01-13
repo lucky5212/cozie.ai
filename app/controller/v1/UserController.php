@@ -228,15 +228,7 @@ class UserController extends BaseController
                 'msg' => '未授权'
             ]);
         }
-
-        // 获取角色ID参数
-        $followUserId = (int)$this->request->get('role_id');
-        if (empty($followUserId)) {
-            return json([
-                'code' => 400,
-                'msg' => '角色ID不能为空'
-            ]);
-        }
+        $userId = $token['uid'];
 
         // 获取分页参数
         $page = max(1, (int)$this->request->get('page', 1));
@@ -245,7 +237,7 @@ class UserController extends BaseController
         try {
             // 调用模型方法获取粉丝列表
             $followModel = new UserFollow();
-            $result = $followModel->getFansList($followUserId, $page, $limit);
+            $result = $followModel->getFansList($userId, $page, $limit);
             return json([
                 'code' => 200,
                 'msg' => '请求成功',
@@ -495,7 +487,7 @@ class UserController extends BaseController
                 $currentValue = Db::name('role_chat_history')->where('user_id', $userId)->whereTime('create_time', 'today')->count();
                 break;
             case 3: // 购买钻石
-                $currentValue = Db::name('money_log')->where('user_id', $userId)->where('type', '购买钻石')->whereTime('create_time', 'today')->count();
+                // $currentValue = Db::name('money_log')->where('user_id', $userId)->where('type', '购买钻石')->whereTime('create_time', 'today')->count();
                 break;
                 // 其他任务类型...
         }
@@ -828,7 +820,7 @@ class UserController extends BaseController
             // 获取总记录数
             $totalCount = $query->count();
             // 获取当前页数据
-            $list = $query->page($page, $limit)->select()->toArray();
+            $list = $query->page($page, $limit)->field('id,title,content,create_time')->select()->toArray();
             // 处理头像URL
             foreach ($list as  $key => $item) {
                 $list[$key]['create_time'] = date('Y-m-d H:i:s', $item['create_time']);

@@ -82,7 +82,7 @@ class ChatController extends BaseController
     public function chatModeList(): Json
     {
 
-        $list = Db::name('role_mode_config')->cache(true)->field('id, name, price')->select();
+        $list = Db::name('role_mode_config')->cache(true, 600)->field('id,name,price')->select();
         return json([
             'code' => 200,
             'msg' => '请求成功',
@@ -415,6 +415,44 @@ class ChatController extends BaseController
         ]);
     }
 
+    // 编辑状态栏
+    public function editRoleStats()
+    {
+        $roleId = $this->request->param('role_id');
+        $token = JwtAuth::decodeToken($this->request->header('Access-Token'));
+        if (!$token) {
+            return json([
+                'code' => 401,
+                'msg' => '未授权'
+            ]);
+        }
+        $userId = $token['uid'];
+        $stats = $this->request->param('stats', '');
+        if (empty($stats)) {
+            return json([
+                'code' => 500,
+                'msg' => '状态栏不能为空'
+            ]);
+        }
+        $role_info = Db::name('role')->where(['id' => $roleId, 'user_id' => $userId])->find();
+        if (empty($role_info)) {
+            return json([
+                'code' => 500,
+                'msg' => '角色不存在,或者不属于您'
+            ]);
+        }
+        $data = [
+            'stats' => $stats,
+            'update_time' => date('Y-m-d H:i:s'),
+        ];
+        Db::name('role')->where(['id' => $roleId, 'user_id' => $userId])->update($data);
+        return json([
+            'code' => 200,
+            'msg' => '角色编辑成功',
+            'data' => ['role_id' => $roleId]
+        ]);
+    }
+
     // 角色列表
     public function roleList()
     {
@@ -433,7 +471,7 @@ class ChatController extends BaseController
                 'page_size' => (int)$limit,     // 每页记录数
                 'total_count' => $roleList['total_count'],   // 总记录数
                 'total_pages' => $roleList['total_pages'],   // 总页数
-                'result' => $roleList['data'],  // 聊天记录数据
+                'data' => $roleList['data'],  // 角色列表数据
             ]
         ]);
     }
@@ -700,9 +738,7 @@ class ChatController extends BaseController
         ]);
     }
 
-    /**
-     * 重新生成聊天
-     */
+
 
     // 重新生成聊天
     public function regenerateChat()
@@ -809,7 +845,8 @@ class ChatController extends BaseController
             try {
                 $scoreMessage = $this->buildScoreMessage($userMessage, $response);
                 $scoreResponse = OpenRouterService::chat([$scoreMessage], 'deepseek/deepseek-chat-v3-0324');
-                // 解析打分响应
+                // 解析打分响应，先移除可能的Markdown代码块格式
+                $scoreResponse = preg_replace('/^```json\s*|\s*```$/s', '', $scoreResponse);
                 $scoreData = json_decode($scoreResponse, true);
                 // 检查JSON解析结果和数据格式
                 if (json_last_error() === JSON_ERROR_NONE && isset($scoreData['score'])) {
@@ -1008,7 +1045,7 @@ class ChatController extends BaseController
             ]);
         }
         $userId = $token['uid'];
-        $roleUserChat = new RoleUserChat();
+        $roleUserChat = new RoleChatHistory();
         $roleUserChat->where('id', $roleId)->where('user_id', $userId)->update([
             'is_read' => 1,
         ]);
@@ -1050,13 +1087,18 @@ class ChatController extends BaseController
             $chatList->updateChatList($userId);
             Cache::set($cacheKey, $now, 86400);
         }
-
-        // 更新角色状态
+        // 获取用户与最近聊天列表
         $result = $chatList->getChatList($userId, $limit, $page);
         return json([
             'code' => 200,
             'msg' => '请求成功',
-            'data' => $result
+            'data' => [
+                'current_page' => (int)$page,  // 当前页码
+                'page_size' => (int)$limit,     // 每页记录数
+                'total_count' => $result['total_count'],   // 总记录数
+                'total_pages' => $result['total_pages'],   // 总页数
+                'data' => $result['data'],  // 角色列表数据
+            ]
         ]);
     }
 
@@ -1090,9 +1132,17 @@ class ChatController extends BaseController
             'msg' => '删除成功'
         ]);
     }
-    // 删除聊天记录
-    public function delChatHistory()
+
+    // 获取聊天记录列表
+    public function chatHistoryList()
     {
+        $roleId = $this->request->param('role_id');
+        if (empty($roleId)) {
+            return json([
+                'code' => 500,
+                'msg' => 'role_id不能为空'
+            ]);
+        }
         // 验证用户身份
         $token = JwtAuth::decodeToken($this->request->header('Access-Token'));
         if (!$token) {
@@ -1109,17 +1159,40 @@ class ChatController extends BaseController
                 'msg' => 'role_id不能为空'
             ]);
         }
+        $limit = $this->request->get('limit');
+        $page = $this->request->get('page');
+        if (empty($limit)) {
+            $limit = 10;
+        }
+        if (empty($page)) {
+            $page = 1;
+        }
         $roleChatHistory = new RoleChatHistory();
-        $result = $roleChatHistory->delChatHistory($userId, $roleId);
+        $result = $roleChatHistory->getChatHistory($userId, $roleId, $limit, $page);
         return json([
             'code' => 200,
-            'msg' => '删除成功'
+            'msg' => '请求成功',
+            'data' => [
+                'current_page' => (int)$page,  // 当前页码
+                'page_size' => (int)$limit,     // 每页记录数
+                'total_count' => $result['total_count'],   // 总记录数
+                'total_pages' => $result['total_pages'],   // 总页数
+                'data' => $result['data'],  // 角色列表数据
+            ]
         ]);
     }
 
-    // 角色记忆总结
-    public function  memorySummary()
+    // 删除聊天记录
+    public function delChatHistory()
     {
+        $roleId = $this->request->param('role_id');
+
+        if (empty($roleId)) {
+            return json([
+                'code' => 500,
+                'msg' => 'role_id不能为空'
+            ]);
+        }
         // 验证用户身份
         $token = JwtAuth::decodeToken($this->request->header('Access-Token'));
         if (!$token) {
@@ -1128,27 +1201,13 @@ class ChatController extends BaseController
                 'msg' => '未授权'
             ]);
         }
-
         $userId = $token['uid'];
-        // 获取请求参数
-        $params = $this->request->post();
-        $roleId = $params['role_id'];
-        if (empty($roleId)) {
-            return json([
-                'code' => 400,
-                'msg' => '角色ID不能为空'
-            ]);
-        }
-        // 检查是否需要进行记忆总结
-        $chatCount = Db::name('role_chat_history')
-            ->where(['user_id' => $userId, 'role_id' => $roleId])
-            ->count();
-        if ($chatCount > 0 && $chatCount % 5 == 0) {
-            $this->generateMemories($userId, $roleId);
-        }
+        // 删除聊天记录
+        $roleChatHistory = new RoleChatHistory();
+        $roleChatHistory->delChatHistory($userId, $roleId);
         return json([
             'code' => 200,
-            'msg' => '请求成功',
+            'msg' => '删除成功'
         ]);
     }
     // 角色内心想法 生成

@@ -98,6 +98,9 @@ class UserFollow extends Model
             'status' => 1
         ])->count();
 
+        foreach ($data as $key => $value) {
+            $data[$key]['avatar_url'] = cdnurl($value['avatar_url']);
+        }
         return [
             'data' => $data,
             'total_count' => $total_count,
@@ -131,6 +134,9 @@ class UserFollow extends Model
             'status' => 1
         ])->count();
 
+        foreach ($data as $key => $value) {
+            $data[$key]['avatar_url'] = cdnurl($value['avatar']);
+        }
         return [
             'data' => $data,
             'total_count' => $total_count,

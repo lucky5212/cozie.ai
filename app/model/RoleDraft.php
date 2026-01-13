@@ -162,7 +162,7 @@ class RoleDraft extends Model
             ->with(['userProfile' => function (Query $query) {
                 $query->field('id,nickname,avatar');
             }])
-            ->field('id,name,desc,avatar_url,category_id,user_id,chat_num,user_num,create_time,greet_message,timbre_id,custom_tags')
+            ->field('id,name,desc,avatar_url,category_id,user_id,chat_num,user_num,create_time,greet_message,timbre_id,custom_tags,tags')
             ->where(['id' => $roleId])
             ->find();
         if ($role_info) {

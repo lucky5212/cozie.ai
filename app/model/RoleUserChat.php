@@ -56,7 +56,8 @@ class RoleUserChat extends Model
                 'r.avatar_url',
                 'rch.question as last_question',
                 'rch.answer as last_answer',
-                'rch.create_time as last_chat_time'
+                'rch.create_time as last_chat_time',
+                'rch.is_read'
             ])
             ->order('ruc.last_chat_date', 'desc') // 按最后聊天时间倒序
             ->page($page, $limit)
@@ -65,17 +66,16 @@ class RoleUserChat extends Model
         foreach ($list as $key => $value) {
             $list[$key]['last_chat_time'] = date('Y-m-d H:i:s', $value['last_chat_time']);
             $list[$key]['last_chat_date'] = date('Y-m-d H:i:s', $value['last_chat_date']);
+            $list[$key]['avatar_url'] =  cdnurl($value['avatar_url']);
         }
 
         // 获取总数
         $total = $this->where('user_id', $userId)->where('status', 1)->count();
 
         return [
-            'list' => $list,
-            'total' => $total,
-            'page' => $page,
-            'limit' => $limit,
-            'totalPages' => ceil($total / $limit)
+            'data' => $list,
+            'total_count' => $total,
+            'total_pages' => ceil($total / $limit)
         ];
     }
 

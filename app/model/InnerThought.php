@@ -45,6 +45,7 @@ class InnerThought extends Model
         $result =  $this->where(['user_id' => $userId, 'role_id' => $roleId])
             ->order('create_time', 'desc')
             ->page($offset, $limit)
+            ->field('id,user_id,role_id,history_id,content,create_time')
             ->select()
             ->toArray();
         $count = $this->where(['user_id' => $userId, 'role_id' => $roleId])->count();

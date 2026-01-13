@@ -43,7 +43,6 @@ class OpenRouterService
         if (self::$client === null) {
             // 加载 OpenRouter 配置
             $config = Config::get('openrouter');
-
             // 验证核心配置是否存在
             if (empty($config['api_key'])) {
                 FacadeLog::error('OpenRouter API Key 未配置');
@@ -96,7 +95,7 @@ class OpenRouterService
      * @return string 响应内容
      * @throws \Exception
      */
-    public static function chat(array $messages, string $model = "anthropic/claude-3.7-sonnet,openrouter/openai/gpt-4o-mini,openrouter/openai/gpt-4o", float $temperature = 0.7, int $maxRetries = 5, int $initialDelayMs = 1500): string
+    public static function chat(array $messages, string $model = "openai/gpt-5.2", float $temperature = 0.7, int $maxRetries = 5, int $initialDelayMs = 1500): string
     {
         // 将模型字符串拆分为数组，支持逗号分隔的多个模型
         $models = array_map('trim', explode(',', $model));

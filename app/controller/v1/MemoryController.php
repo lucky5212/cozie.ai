@@ -57,7 +57,7 @@ class MemoryController extends BaseController
                 'page_size' => (int)$limit,     // 每页记录数
                 'total_count' => $result['total_count'],   // 总记录数
                 'total_pages' => $result['total_pages'],   // 总页数
-                'result' => $result['data'],  // 聊天记录数据
+                'data' => $result['data'],  // 聊天记录数据
             ]
         ]);
     }

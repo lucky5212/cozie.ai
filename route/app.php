@@ -40,12 +40,12 @@ Route::group('api/V1', function () {
     Route::post('savePresume', 'app\controller\v1\ChatController@savePresume'); // 添加用户设定
     Route::get('viewPresume', 'app\controller\v1\ChatController@viewPresume'); // 查看用户设定
     Route::post('addRoleEvent', 'app\controller\v1\ChatController@addRoleEvent'); // 角色新增事件
-    Route::post('addRoleStats', 'app\controller\v1\ChatController@addRoleStats'); // 角色编辑状态栏 
+    Route::post('editRoleStats', 'app\controller\v1\ChatController@editRoleStats'); // 角色编辑状态栏 
     Route::post('chatWithRole', 'app\controller\v1\ChatController@chatWithRole'); // 与角色聊天接口
     Route::get('text', 'app\controller\v1\ChatController@text'); // 测试接口
     Route::post('innerThought', 'app\controller\v1\ChatController@innerThought'); // 角色内心想法生成
     Route::post('memorySummary', 'app\controller\v1\ChatController@memorySummary'); // 角色记忆总结
-    Route::get('chatHistoryList', 'app\controller\v1\ChatController@chatHistory'); // 角色聊天记录
+    Route::get('chatHistoryList', 'app\controller\v1\ChatController@chatHistoryList'); // 角色聊天记录
     Route::get('roleList', 'app\controller\v1\ChatController@roleList'); // 角色列表
     Route::get('roleInfo', 'app\controller\v1\ChatController@roleInfo'); // 角色详情
     Route::post('editRole', 'app\controller\v1\ChatController@editRole'); // 编辑角色
