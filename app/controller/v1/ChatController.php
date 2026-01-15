@@ -23,6 +23,8 @@ use think\facade\Db;
 use think\response\Json;
 use think\facade\Log;
 use think\facade\Queue;
+use Twig\Environment;
+use Twig\Loader\ArrayLoader;
 
 class ChatController extends BaseController
 {
@@ -753,6 +755,7 @@ class ChatController extends BaseController
         }
     }
 
+
     /**
      * 与角色聊天
      * @return Json
@@ -810,8 +813,10 @@ class ChatController extends BaseController
                 ]);
             }
 
+
+
             // 检查是否需要生成昨日记忆总结（基于用户活动的异步处理）
-            $this->checkAndScheduleDailySummary($userId, $roleId);
+            $this->checkAndScheduleDailySummary($userId, $roleId, $modeData['lang']);
 
             // 构建系统消息（规则+角色信息+记忆）
             $systemMessage = $this->buildSystemMessage($roleData, $userId, $roleId, $modeData);
@@ -1228,6 +1233,7 @@ class ChatController extends BaseController
         $userMessage = $params['message'];
         $response = $params['answer'];
         $historyId = $params['answer_id'];
+        $mode_id = $params['mode_id'] ?? '1';
         // 验证必要参数
         if (empty($roleId) || empty($userMessage)) {
             return json([
@@ -1243,11 +1249,66 @@ class ChatController extends BaseController
                 'msg' => '角色不存在'
             ]);
         }
+        $mode = Db::name('role_mode_config')->where(['id' => $mode_id])->find();
+        if (!$mode) {
+            return json([
+                'code' => 404,
+                'msg' => '模式不存在'
+            ]);
+        }
         // 随机生成角色内心想法 (30%概率)
         $innerThoughts = '';
-        $rand_num = rand(1, 10);
+        $rand_num = rand(1, 3);
         if ($rand_num <= 3) {
-            $innerThoughts = $this->generateInnerThoughts($roleData, $userId, $roleId, $userMessage, $response);
+            // 歷史事件（對應模板中的 historyEvent）
+            $infoList = Db::name('role_info')
+                ->where(['role_id' => $roleId, 'uid' => $userId])
+                ->order('id', 'asc')
+                ->field('CONCAT(title, "：", content) as full_content')
+                ->select()
+                ->toArray();
+
+            $historyEvent = '';
+            foreach ($infoList as $it) {
+                $historyEvent .= $it['full_content'] . "\n";
+            }
+            //  歷史記憶（對應模板中的 historyMemory）
+            // 当日记忆
+            $todayMemory = '';
+            $todayMemoryList = Db::name('role_memory')
+                ->where(['user_id' => $userId, 'role_id' => $roleId])
+                ->where('status', 1)
+                ->where('sub_category', 'memory')
+                ->whereDay('create_time')
+                ->order('create_time', 'asc')
+                ->select()
+                ->toArray();
+
+            if (!empty($todayMemoryList)) {
+                foreach ($todayMemoryList as $m) {
+                    $todayMemory .= $m['content'];
+                }
+            }
+            // 历史记忆
+            $historyMemory = '';
+            $historyMemoryList = Db::name('role_memory')
+                ->where(['user_id' => $userId, 'role_id' => $roleId])
+                ->where('category', 'in', ['daily_summary'])
+                ->where('status', 1)
+                ->limit($mode['memory_days'])
+                ->select()
+                ->toArray();
+            if (!empty($historyMemoryList)) {
+                foreach ($historyMemoryList as $m) {
+                    $historyMemory .=  date('Y-m-d', $m['create_time']) . '： ' . $m['content'] . "\n";
+                }
+            }
+
+            $innerThoughts = $this->generateInnerThoughts($mode['idea_prompt'], $roleData, $userId, $userMessage, $response, [
+                'historyEvent' => $historyEvent,
+                'todayMemory' => $todayMemory,
+                'historyMemory' => $historyMemory,
+            ]);
             // 内心想法储存
             if ($innerThoughts) {
                 $roleMemory = new \app\model\InnerThought();
@@ -1272,44 +1333,86 @@ class ChatController extends BaseController
      * @param int $roleId 角色ID
      * @return void
      */
-    private function generateMemories($userId, $roleId)
+    public function memorySummary()
     {
 
-        try {
-            Log::info('开始执行记忆总结任务', [
-                'user_id' => $userId,
-                'role_id' => $roleId
+        // 验证用户身份
+        $token = JwtAuth::decodeToken($this->request->header('Access-Token'));
+        if (!$token) {
+            return json([
+                'code' => 401,
+                'msg' => '未授权'
             ]);
+        }
+        $userId = $token['uid'];
+        $roleId = $this->request->param('role_id');
+        $lang = $this->request->param('lang', '繁体中文');
 
-            // 获取聊天记录用于总结
-            $chatHistory = \think\facade\Db::name('role_chat_history')
-                ->where(['user_id' => $userId, 'role_id' => $roleId])
-                ->order('id', 'desc')
-                ->limit(5) // 获取最近5条消息用于总结
-                ->select()
-                ->reverse();
-            $memoryPrompt = $this->buildMemorySummaryPrompt($chatHistory);
-            // 调用OpenAI API生成记忆
-            $memoriesResponse = OpenRouterService::chat([$memoryPrompt]);
-            // 解析记忆数据
-            $memories = json_decode($memoriesResponse, true);
-            // 保存记忆数据
-            if (isset($memories['memories']) && is_array($memories['memories'])) {
-                $roleMemory = new \app\model\RoleMemory();
-                $roleMemory->saveMemories($userId, $roleId, $memories['memories'], $chatHistory[4]['id']);
+        if (!$roleId) {
+            return json([
+                'code' => 400,
+                'msg' => '角色ID不能为空'
+            ]);
+        }
+
+
+        $chatCount = Db::name('role_chat_history')->where(['user_id' => $userId, 'role_id' => $roleId])->where('status', 1)->count();
+        if ($chatCount > 0 && $chatCount % 5 == 0) {
+            // 检查角色是否存在
+            $roleData = Db::name('role')->where(['id' => $roleId, 'user_id' => $userId])->find();
+            $username = Db::name('user_presume')->where(['id' => $userId])->value('name');
+            if (!$username) {
+                $username = Db::name('user')->where(['id' => $userId])->value('nickname');
             }
 
-            Log::info('记忆总结任务执行成功', [
-                'user_id' => $userId,
-                'role_id' => $roleId
-            ]);
-        } catch (\Exception $e) {
-            // 记录错误日志
-            Log::error('记忆总结任务执行失败', [
-                'user_id' => $userId,
-                'role_id' => $roleId,
-                'error_message' => $e->getMessage(),
-                'stack_trace' => $e->getTraceAsString()
+            if (!$roleData) {
+                return json([
+                    'code' => 404,
+                    'msg' => '角色不存在'
+                ]);
+            }
+            try {
+                Log::info('开始执行记忆总结任务', [
+                    'user_id' => $userId,
+                    'role_id' => $roleId
+                ]);
+
+                // 获取聊天记录用于总结
+                $chatHistory = \think\facade\Db::name('role_chat_history')
+                    ->where(['user_id' => $userId, 'role_id' => $roleId])
+                    ->order('id', 'desc')
+                    ->limit(5) // 获取最近5条消息用于总结
+                    ->select()
+                    ->reverse();
+
+                $memoryPrompt = $this->buildMemorySummaryPrompt($chatHistory, $username, $roleData['name'], $lang);
+                // 调用OpenAI API生成记忆
+                $memoriesResponse = OpenRouterService::chat([$memoryPrompt]);
+                // 解析记忆数据
+                $memories = json_decode($memoriesResponse, true);
+                // 保存记忆数据
+                if (isset($memories['memories']) && is_array($memories['memories'])) {
+                    $roleMemory = new \app\model\RoleMemory();
+                    $roleMemory->saveMemories($userId, $roleId, $memories['memories'], $chatHistory[4]['id']);
+                }
+
+                Log::info('记忆总结任务执行成功', [
+                    'user_id' => $userId,
+                    'role_id' => $roleId
+                ]);
+            } catch (\Exception $e) {
+                // 记录错误日志
+                Log::error('记忆总结任务执行失败', [
+                    'user_id' => $userId,
+                    'role_id' => $roleId,
+                    'error_message' => $e->getMessage(),
+                    'stack_trace' => $e->getTraceAsString()
+                ]);
+            }
+        } else {
+            return json([
+                'code' => 200,
+                'msg' => 'success'
             ]);
         }
     }
@@ -1321,7 +1424,7 @@ class ChatController extends BaseController
      * @param int $roleId 角色ID
      * @return void
      */
-    private function checkAndScheduleDailySummary($userId, $roleId)
+    private function checkAndScheduleDailySummary($userId, $roleId, $lang)
     {
         try {
             // 缓存键名，用于控制检查频率（每24小时只检查一次）
@@ -1366,18 +1469,20 @@ class ChatController extends BaseController
 
             // 将生成总结的任务放入队列异步处理
             // 延迟1分钟执行，避免影响当前聊天请求
-            $jobData = ['user_id' => $userId, 'role_id' => $roleId];
+            $jobData = ['user_id' => $userId, 'role_id' => $roleId, 'lang' => $lang];
             Queue::later(60, 'app\job\DailyMemorySummaryJob', $jobData, 'daily_summary');
 
             Log::info('已将每日记忆总结任务放入队列', [
                 'user_id' => $userId,
-                'role_id' => $roleId
+                'role_id' => $roleId,
+                'lang' => $lang
             ]);
         } catch (\Exception $e) {
             // 记录错误日志，但不影响主流程
             Log::error('检查并调度每日记忆总结失败', [
                 'user_id' => $userId,
                 'role_id' => $roleId,
+                'lang' => $lang,
                 'error_message' => $e->getMessage(),
                 'stack_trace' => $e->getTraceAsString()
             ]);
@@ -1390,22 +1495,46 @@ class ChatController extends BaseController
      * @param array $chatHistory 聊天历史
      * @return array
      */
-    public static function buildMemorySummaryPrompt($chatHistory): array
+    public static function buildMemorySummaryPrompt($chatHistory, $username, $rolename, $lang): array
     {
-        // 构建对话内容
-        $conversation = "<conversation>\n\n";
-        foreach ($chatHistory as $log) {
-            $conversation .= "    <user> (User name: 向晚):{$log['question']} </user>\n";
-            $conversation .= "    <assistant> (Assistant name: 封澈):{$log['answer']} </assistant>\n";
-        }
-        $conversation .= "\n</conversation>";
+        // // 构建对话内容
+        // $conversation = "<conversation>\n\n";
+        // foreach ($chatHistory as $log) {
+        //     $conversation .= "<user> (User name: {$username}):{$log['question']} </user>\n";
+        //     $conversation .= "<assistant> (Assistant name: {$rolename}):{$log['answer']} </assistant>\n";
+        // }
+        // $conversation .= "\n</conversation>";
 
-        // 记忆总结提示词
+
+        // // 记忆总结提示词
+        // $prompt = [
+        //     "role" => "system",
+        //     "content" => "## 目標\n請分析 `user` 和 `assistant` 之間的對話，萃取兩大類資訊：「個人資料」與「重要事件」。\n\n## 具體任務\n\n### 1. 萃取個人資料類資訊（user_memory）\n\n- 請根據下列子分類萃取資訊，每一類僅需提供最重要或最新的一筆：\n  - \"nickname_of_user\"：Assistant對user的唯一稱呼，不可有任何說明\n  - \"user_likes\"：user喜歡的事物\n  - \"user_dislikes\"：user不喜歡的事物\n  - \"location\"：目前事件發生地點（如「家裡」、「海邊」等）\n  - \"other\"：僅萃取user背景（教育、職業、家鄉）、家庭關係（父母/兄弟姐妹/子女/配偶/寵物等），以及user和assistant間的關係，其他均需排除\n- 絕對不可萃取下列資訊：\n  - 外貌描述（如髮色、眼睛顏色等）\n  - 關係弱化性描述（如「關係很好」）\n\n### 2. 重要事件（medium_memory，子分類 memory）\n\n- 萃取user與虛擬角色間的重要互動，僅保留核心結果：\n  - 與時間節點相關的描述資訊\n  - 情感或關係的重大轉變（如表白、分手、建立關係、結婚等）\n  - 重大決定或承諾\n  - 即將發生的重要計劃\n  - 特殊紀念日或里程碑（具體時間需保留）\n- 同主題相關事件須合併為單一條目，僅簡明記錄核心結果，省略過程細節。\n- 每筆事件須以精簡語句描述，需包含主要角色姓名（如無暱稱請以「用戶」稱之）。\n- 忽略所有以 ** 或（）標註的個人感受、描述或動作。\n- 若僅為問答、無帶來重要新資訊者，不視為事件。\n\n## 輸出格式要求\n\n- ***僅***可輸出JSON格式，嚴禁任何解釋、註釋、說明文字，亦不可包含任何符號（如markdown標記、空行或多餘字元）\n- **必須直接以 `{` 起始，`}` 結尾**\n- 只允許以下格式：\n\n{\n  \"memories\": [\n    {\n      \"content\": \"\",\n      \"category\": \"\",\n      \"sub_category\": \"\"\n    }\n  ]\n}\n\n## 規則總結\n\n- 今天日期為 " . date('Y-m-d') . ".\n- 各內容必須嚴格歸類（category 僅能為 \"medium_memory\" 或 \"user_memory\"，sub_category 僅可為 \"nickname_of_user\"、\"user_likes\"、\"user_dislikes\"、\"location\"、\"memory\"、\"other\"）。\n- 只可輸出最終JSON結果，嚴禁任何解釋、推理或多餘內容\n- 禁止複製或引用本提示示例內容。\n- 僅能使用繁體中文作答。\n\n## 對話內容\n{$conversation}"
+        // ];
+        // 获取模板
+        if ($lang == "繁体中文") {
+            $template = DB::name('config')->where(['id' => 23])->value('value');
+        } else {
+            $template = DB::name('config')->where(['id' => 24])->value('value');
+        }
+
+        // 初始化 Twig
+        $loader = new ArrayLoader([
+            'fivePrompt' => $template,
+        ]);
+        $twig = new Environment($loader);
+
+        $variables = [
+            'chatHistory' => $chatHistory,
+            'username' => $username,
+            'rolename' => $rolename,
+        ];
+        $prompt = $twig->render('fivePrompt', $variables);
+
         $prompt = [
             "role" => "system",
-            "content" => "## 目標\n請分析 `user` 和 `assistant` 之間的對話，萃取兩大類資訊：「個人資料」與「重要事件」。\n\n## 具體任務\n\n### 1. 萃取個人資料類資訊（user_memory）\n\n- 請根據下列子分類萃取資訊，每一類僅需提供最重要或最新的一筆：\n  - \"nickname_of_user\"：Assistant對user的唯一稱呼，不可有任何說明\n  - \"user_likes\"：user喜歡的事物\n  - \"user_dislikes\"：user不喜歡的事物\n  - \"location\"：目前事件發生地點（如「家裡」、「海邊」等）\n  - \"other\"：僅萃取user背景（教育、職業、家鄉）、家庭關係（父母/兄弟姐妹/子女/配偶/寵物等），以及user和assistant間的關係，其他均需排除\n- 絕對不可萃取下列資訊：\n  - 外貌描述（如髮色、眼睛顏色等）\n  - 關係弱化性描述（如「關係很好」）\n\n### 2. 重要事件（medium_memory，子分類 memory）\n\n- 萃取user與虛擬角色間的重要互動，僅保留核心結果：\n  - 與時間節點相關的描述資訊\n  - 情感或關係的重大轉變（如表白、分手、建立關係、結婚等）\n  - 重大決定或承諾\n  - 即將發生的重要計劃\n  - 特殊紀念日或里程碑（具體時間需保留）\n- 同主題相關事件須合併為單一條目，僅簡明記錄核心結果，省略過程細節。\n- 每筆事件須以精簡語句描述，需包含主要角色姓名（如無暱稱請以「用戶」稱之）。\n- 忽略所有以 ** 或（）標註的個人感受、描述或動作。\n- 若僅為問答、無帶來重要新資訊者，不視為事件。\n\n## 輸出格式要求\n\n- ***僅***可輸出JSON格式，嚴禁任何解釋、註釋、說明文字，亦不可包含任何符號（如markdown標記、空行或多餘字元）\n- **必須直接以 `{` 起始，`}` 結尾**\n- 只允許以下格式：\n\n{\n  \"memories\": [\n    {\n      \"content\": \"\",\n      \"category\": \"\",\n      \"sub_category\": \"\"\n    }\n  ]\n}\n\n## 規則總結\n\n- 今天日期為 " . date('Y-m-d') . ".\n- 各內容必須嚴格歸類（category 僅能為 \"medium_memory\" 或 \"user_memory\"，sub_category 僅可為 \"nickname_of_user\"、\"user_likes\"、\"user_dislikes\"、\"location\"、\"memory\"、\"other\"）。\n- 只可輸出最終JSON結果，嚴禁任何解釋、推理或多餘內容\n- 禁止複製或引用本提示示例內容。\n- 僅能使用繁體中文作答。\n\n## 對話內容\n{$conversation}"
+            "content" => $prompt
         ];
-
         return $prompt;
     }
 
@@ -1419,27 +1548,28 @@ class ChatController extends BaseController
      * @param string $assistantResponse 助手回复
      * @return string|null 内心想法内容或NULL
      */
-    private function generateInnerThoughts($roleData, $userId, $roleId, $userMessage, $assistantResponse)
+    private function generateInnerThoughts($template, $roleData, $userId, $userMessage, $assistantResponse, $extra = [])
     {
         try {
+
             // 构建内心想法提示词
-            $innerThoughtsPrompt = $this->buildInnerThoughtsPrompt($roleData, $userId, $roleId, $userMessage, $assistantResponse);
+            $innerThoughtsPrompt = $this->buildInnerThoughtsPromptWithTwig($template, $roleData, $userId, $userMessage, $assistantResponse, $extra);
             // 调用OpenAI API生成内心想法
-            $innerThoughtsResponse = OpenRouterService::chat([$innerThoughtsPrompt]);
+            $innerThoughtsResponse = OpenRouterService::chat([$innerThoughtsPrompt], 'deepseek/deepseek-v3.2');
             // 如果返回NULL或空字符串，则返回NULL
             if (empty($innerThoughtsResponse) || $innerThoughtsResponse === 'NULL' || $innerThoughtsResponse === 'null') {
                 // 记录空结果日志
                 Log::info('生成角色内心想法返回空值', [
                     'user_id' => $userId,
-                    'role_id' => $roleId
+                    'role_id' => $roleData['id'],
                 ]);
-                return null;
+                return '';
             }
 
             // 记录成功日志
             Log::info('生成角色内心想法成功', [
                 'user_id' => $userId,
-                'role_id' => $roleId,
+                'role_id' => $roleData['id'],
                 'response' => $innerThoughtsResponse
             ]);
             return $innerThoughtsResponse;
@@ -1447,83 +1577,103 @@ class ChatController extends BaseController
             // 记录错误日志，但不中断主流程
             \think\facade\Log::error('生成角色内心想法失败', [
                 'user_id' => $userId,
-                'role_id' => $roleId,
+                'role_id' => $roleData['id'],
                 'error_message' => $e->getMessage(),
                 'error_code' => $e->getCode(),
                 'stack_trace' => $e->getTraceAsString()
             ]);
-            return null;
+            return '';
         }
     }
+
 
     /**
-     * 构建内心想法提示词
-     * @param array $roleData 角色信息
-     * @param int $userId 用户ID
-     * @param int $roleId 角色ID
-     * @param string $userMessage 用户消息
-     * @param string $assistantResponse 助手回复
-     * @return array
+     * 使用 Twig 渲染內心想法提示詞
+     *
+     * @param string $template  Twig 模板字串（從資料庫獲取）
+     * @param array  $roleData  角色資訊
+     * @param array  $userData  用戶資訊（可為 null）
+     * @param string $question  用戶消息
+     * @param string $answer    助手回覆
+     * @param array  $extra     額外參數（歷史事件、記憶等）
+     * @return array           渲染後的提示詞
      */
-    private function buildInnerThoughtsPrompt($roleData, $userId, $roleId, $userMessage, $assistantResponse): array
-    {
-        // 获取角色信息
-        $roleNickname = $roleData['name'] ?? '角色';
-        $roleGender = $roleData['gender'] ?? 'WOMAN';
-        $roleAge = $roleData['age'] ?? '未知';
-        $roleOccupation = $roleData['occupation'] ?? '未知';
-        $roleDesc = $roleData['desc'] ?? '';
-        $roleCharacter = $roleData['character'] ?? '';
-
-        // 获取用户信息
-        $userPresume = Db::name('user_presume')->where(['uid' => $userId, 'role_id' => $roleId])->find();
-        if (!$userPresume) {
-            $userData = Db::name('user')->where(['id' => $userId])->find();
-            $userNickname = $userData['nickname'] ?? '用户';
-            $userGender = $userData['gender'] ?? 'MAN';
-            $userDesc = $userData['desc'] ?? '';
+    function buildInnerThoughtsPromptWithTwig(
+        string $template,
+        array $roleData,
+        int $userId,
+        string $question,
+        string $answer,
+        array $extra = []
+    ): array {
+        $user_presume = Db::name("user_presume")
+            ->where(['uid' => $userId, 'role_id' => $roleData['id']])
+            ->find();
+        if (!$user_presume) {
+            $user_data = User::getUserinfo($roleData['uid']);
+            $user = [
+                'name'   => $user_data['nickname'] ?? '',
+                'gender' => $user_data['gender'] ?? '',
+                'intro'  => $user_data['desc'] ?? '',
+            ];
+            $userLikes    = '';
+            $userDislikes = '';
+            $userOthers   = '';
+            $nicknameOfUser = '';
         } else {
-            $userNickname = $userPresume['name'] ?? '用户';
-            $userGender = $userPresume['gender'] ?? 'MAN';
-            $userDesc = $userPresume['desc'] ?? '';
+            $user = [
+                'name'   => $user_presume['name'] ?? '',
+                'gender' => $user_presume['gender'] ?? '',
+                'intro'  => $user_presume['desc'] ?? '',
+            ];
+            $userLikes      = $user_presume['favourite'] ?? '';
+            $userDislikes   = $user_presume['loathe'] ?? '';
+            $userOthers     = $user_presume['other'] ?? '';
+            $nicknameOfUser = $user_presume['name'] ?? ''; // 若你有這欄位
         }
+        // 初始化 Twig
+        $loader = new ArrayLoader([
+            'inner_thoughts' => $template,
+        ]);
+        $twig = new Environment($loader);
+        // 準備模板變數
+        $variables = [
+            // 角色資訊
+            'name'     => $roleData['name'] ?? '角色',
+            'gender'   => $roleData['gender'] ?? '',      // '0'=男, '1'=女
+            'age'      => $roleData['age'] ?? '未知',
+            'identity' => $roleData['occupation'] ?? '',
+            'intro'    => $roleData['desc'] ?? '',
+            'habits'   => $roleData['character'] ?? '',
+            'setting'  => $roleData['setting'] ?? '',
+            // 用戶資訊
+            'user'           => $user_presume,                 // 可為 null
+            'nicknameOfUser' => $nicknameOfUser,
+            'userGender'     => $user['gender'] ?? '',
+            'userLikes'      => $userLikes,
+            'userDislikes'   => $userDislikes,
+            'userOthers'     => $userOthers,
+            // 對話與時間
+            'question'  => $question,
+            'answer'    => $answer,
+            'localDate' => date('Y-m-d'),
 
-        // 构建背景信息
-        $backgroundInfo = "###Assistant訊息 
-#Assistant昵稱：'{$roleNickname}' 
-#Assistant性別：{$roleGender}
-#Assistant年齡：{$roleAge}
-#Assistant身份：{$roleOccupation} 
-#Assistant簡介：
-{$roleDesc}
-#性格習慣：
-{$roleCharacter} 
-###用戶背景： 
-#用戶性别：{$userGender} 
-#用戶描述：{$userDesc}
-#角色称呼用户：'{$userNickname}' 
-###当前日期: " . date('Y-m-d');
-
-        // 构建对话信息
-        $conversationInfo = "<User> {$userMessage} </User> 
- <Assistant> {$assistantResponse} </Assistant>";
-
+            // 歷史記錄
+            'historyEvent'  => $extra['historyEvent'] ?? '',
+            'todayMemory'   => $extra['todayMemory'] ?? '',
+            'historyMemory' => $extra['historyMemory'] ?? '',
+        ];
+        // halt($variables);
+        $str = $twig->render('inner_thoughts', $variables);
         $prompt = [
             "role" => "system",
-            "content" => "你扮演一位心理學專家，根據Assistant的背景資訊，以及Assistant和User之間的對話內容，判斷是否需要生成人物的內心想法。 
- 以下是你判斷是否生成內心想法的規則： 
- * 只有當用戶詢問角色情感問題且角色的回覆內容可能與內心完全相反時，才生成並只返回角色內心想法內容（繁體中文），否則返回 NULL。 
- * 如果不確定User的姓名和性別，請不要幻想對方的姓名和性別 
- * 不要做任何解釋，直接給出結果 
- * 保持簡潔，2-3句話 
- ## 背景資訊: 
-{$backgroundInfo} 
- ## 對話資訊: 
-{$conversationInfo} 
- ## Assistant此刻的內心想法是："
+            "content" => $str,
         ];
+        // 渲染並返回
         return $prompt;
     }
+
+
 
     /**
      * 构建打分消息
@@ -1540,6 +1690,9 @@ class ChatController extends BaseController
             'role' => 'system'
         ];
     }
+
+
+
     /**
      * 构建系统消息
      * @param array $roleData 角色信息
@@ -1547,85 +1700,121 @@ class ChatController extends BaseController
      */
     private function buildSystemMessage(array $roleData, string $userId, string $roleId, array $modeData): array
     {
+        // 1. 取得模板（可以從 DB 取，這裡假設在 $modeData['chat_prompt']）
+        $rulesTemplate = $modeData['chat_prompt'] ?? '';
 
-        // 背景信息 
-        $user_presume = Db::name("user_presume")->where(['uid' => $userId, 'role_id' => $roleId])->find();
+        // 2. 準備用戶背景資料（對應模板中的 user.* 等）
+        $user_presume = Db::name("user_presume")
+            ->where(['uid' => $userId, 'role_id' => $roleId])
+            ->find();
+
         if (!$user_presume) {
             $user_data = User::getUserinfo($userId);
-            $user_background = "###用戶背景：\n#用戶性别：{$user_data['gender']}#用戶描述：{$user_data['desc']}#角色称呼用户：{$user_data['nickname']}###";
+            $user = [
+                'name'   => $user_data['nickname'] ?? '',
+                'gender' => $user_data['gender'] ?? '',
+                'intro'  => $user_data['desc'] ?? '',
+            ];
+            $userLikes    = '';
+            $userDislikes = '';
+            $userOthers   = '';
+            $nicknameOfUser = '';
         } else {
-            $user_background = "###用戶背景:\n#用戶性别：{$user_presume['gender']}#用戶描述：{$user_presume['desc']}#角色称呼用户：{$user_presume['name']}#用戶喜欢：{$user_presume['favourite']}#用戶不喜欢：{$user_presume['loathe']}#其它：{$user_presume['other']}###";
+            $user = [
+                'name'   => $user_presume['name'] ?? '',
+                'gender' => $user_presume['gender'] ?? '',
+                'intro'  => $user_presume['desc'] ?? '',
+            ];
+            $userLikes      = $user_presume['favourite'] ?? '';
+            $userDislikes   = $user_presume['loathe'] ?? '';
+            $userOthers     = $user_presume['other'] ?? '';
+            $nicknameOfUser = $user_presume['name'] ?? ''; // 若你有這欄位
         }
-        // 角色事件
-        $info = Db::name('role_info')
+
+        // 3. 歷史事件（對應模板中的 historyEvent）
+        $infoList = Db::name('role_info')
             ->where(['role_id' => $roleId, 'uid' => $userId])
-            ->order('id', 'asc') // 修正easc→asc
+            ->order('id', 'asc')
             ->field('CONCAT(title, "：", content) as full_content')
             ->select()
-            ->toArray(); // MySQL拼接语法
-        $info_str = '';
-        foreach ($info as $key => $value) {
-            $info_str .= $value['full_content'] . "\n";
+            ->toArray();
+
+        $historyEvent = '';
+        foreach ($infoList as $it) {
+            $historyEvent .= $it['full_content'] . "\n";
         }
-        // 系统规则模板
-        $rules = $modeData['chat_prompt'];
-        // 角色信息模板
-        $roleInfo = "###角色訊息\n#角色昵稱：{$roleData['name']}#角色性別：{$roleData['gender']}#角色年齡：{$roleData['age']}#角色身份：{$roleData['occupation']}#角色簡介：\n{$roleData['desc']}#性格習慣：\n{$roleData['character']} {$user_background}###当前日期: " . date('Y-m-d');
-        // 整合所有内容
-        // 读取记忆内容 - 改进版：只获取当日记忆并分类显示
-        $memoryContent = '';
-        if (!empty($userId) && !empty($roleId)) {
-            // 获取今日时间范围
-            $todayStart = strtotime(date('Y-m-d'));
-            $todayEnd = $todayStart + 86400;
+        // 4. 歷史記憶（對應模板中的 historyMemory）
+        // 当日记忆
+        $todayMemory = '';
+        $todayMemoryList = Db::name('role_memory')
+            ->where(['user_id' => $userId, 'role_id' => $roleId])
+            ->where('status', 1)
+            ->where('sub_category', 'memory')
+            ->whereDay('create_time')
+            ->order('create_time', 'asc')
+            ->select()
+            ->toArray();
 
-            // 获取当日记忆，包含完整信息
-            $memoryList = Db::name('role_memory')
-                ->where(['user_id' => $userId, 'role_id' => $roleId])
-                ->where('category', 'not in', ['daily_summary'])
-                ->where('create_time', '>=', $todayStart)
-                ->where('create_time', '<', $todayEnd)
-                ->where('status', 1)
-                ->order('create_time', 'asc') // 按时间顺序显示
-                ->select()
-                ->toArray();
-
-            if (!empty($memoryList)) {
-                $memoryContent = "###今日記憶：\n";
-                foreach ($memoryList as $memory) {
-                    // 根据类别和子类别格式化记忆内容
-                    $category = $memory['category'] == 'user_memory' ? '用戶資料' : '重要事件';
-                    $subCategory = $memory['sub_category'];
-                    $content = $memory['content'];
-                    $memoryContent .= "#{$category}（{$subCategory}）：{$content}\n";
-                }
+        if (!empty($todayMemoryList)) {
+            foreach ($todayMemoryList as $m) {
+                $todayMemory .= $m['content'];
             }
-            // 获取当日记忆，包含完整信息
-            $memoryHistoryList = Db::name('role_memory')
-                ->where(['user_id' => $userId, 'role_id' => $roleId])
-                ->where('category', 'in', ['daily_summary'])
-                ->where('status', 1)
-                ->limit($modeData['memory_days'])
-                ->select()
-                ->toArray();
-            if (!empty($memoryHistoryList)) {
-                $memoryContent .= "###最近{$modeData['memory_days']}天記憶：\n";
-                foreach ($memoryHistoryList as $memory) {
-                    // 根据类别和子类别格式化记忆内容
-                    $category = $memory['category'] == 'user_memory' ? '用戶資料' : '重要事件';
-                    $subCategory = $memory['sub_category'];
-                    $content = $memory['content'];
-                    $memoryContent .= "#{$category}（{$subCategory}）：{$content}\n";
-                }
+        }
+        // 历史记忆
+        $historyMemory = '';
+        $historyMemoryList = Db::name('role_memory')
+            ->where(['user_id' => $userId, 'role_id' => $roleId])
+            ->where('category', 'in', ['daily_summary'])
+            ->where('status', 1)
+            ->limit($modeData['memory_days'])
+            ->select()
+            ->toArray();
+
+        if (!empty($historyMemoryList)) {
+            foreach ($historyMemoryList as $m) {
+                $historyMemory .=  date('Y-m-d', $m['create_time']) . '： ' . $m['content'] . "\n";
             }
         }
 
-        $str =  $rules . $roleInfo . $info_str . $memoryContent . "\n#在每个会话结尾添加下面的格式内容：{$roleData['stats']}";
+        // 5. 其他可選欄位（根據你實際欄位調整）
+        // $location = $roleData['location'] ?? ''; // 如果有劇情地點
+        $stats    = $roleData['stats'] ?? '';
 
+        // 6. 組裝 Twig context（名稱必須與模板中的變數一致）
+        $context = [
+            'name'           => $roleData['name'] ?? '',
+            'gender'         => $roleData['gender'] ?? '',
+            'age'            => $roleData['age'] ?? '',
+            'identity'       => $roleData['identity'] ?? '',
+            'intro'          => $roleData['intro'] ?? ($roleData['desc'] ?? ''),
+            'habits'         => $roleData['habits'] ?? ($roleData['character'] ?? ''),
+            'setting'        => $roleData['setting'] ?? '',
+            'user'           => $user,             // 模板裡用 user.name / user.gender / user.intro
+            'nicknameOfUser' => $nicknameOfUser,
+            'userLikes'      => $userLikes,
+            'userDislikes'   => $userDislikes,
+            'userOthers'     => $userOthers,
+            // 'location'       => $location,
+            'stats'          => $stats,
+            'localDate'      => date('Y-m-d'),
+            'historyEvent'   => trim($historyEvent),
+            'todayMemory'    => trim($todayMemory),
+            'historyMemory'  => trim($historyMemory),
+        ];
+
+        // 7. 用 Twig 渲染模板
+        $loader = new ArrayLoader([
+            'chat_prompt' => $rulesTemplate,
+        ]);
+        $twig = new Environment($loader, [
+            'autoescape' => false, // 我們是系統提示詞，不需要 HTML 轉義
+        ]);
+        $finalPrompt = $twig->render('chat_prompt', $context);
+        halt($finalPrompt);
         $result  = [
             [
                 "type" => "text",
-                "text" => $str
+                "text" => $finalPrompt
             ],
             [
                 "type" => "text",
