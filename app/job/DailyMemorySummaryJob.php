@@ -7,6 +7,8 @@ use app\service\OpenRouterService;
 use think\facade\Db;
 use think\facade\Log;
 use think\queue\Job;
+use Twig\Environment;
+use Twig\Loader\ArrayLoader;
 
 class DailyMemorySummaryJob
 {
@@ -21,6 +23,7 @@ class DailyMemorySummaryJob
         try {
             $userId = $data['user_id'];
             $roleId = $data['role_id'];
+            $lang = $data['lang'] ?? '繁体中文';
 
             Log::info('开始执行每日记忆总结队列任务', [
                 'user_id' => $userId,
@@ -28,7 +31,7 @@ class DailyMemorySummaryJob
                 'job_id' => $job->getJobId()
             ]);
             // 调用每日记忆总结方法
-            $result = $this->generateDailyMemorySummary($userId, $roleId);
+            $result = $this->generateDailyMemorySummary($userId, $roleId, $lang);
 
             if ($result) {
                 Log::info('每日记忆总结队列任务执行成功', [
@@ -80,7 +83,7 @@ class DailyMemorySummaryJob
      * @param int $roleId 角色ID
      * @return bool
      */
-    private function generateDailyMemorySummary($userId, $roleId)
+    private function generateDailyMemorySummary($userId, $roleId, $lang)
     {
         // 检查今日是否已经生成过昨日记忆总结和日记
 
@@ -113,13 +116,25 @@ class DailyMemorySummaryJob
             return false; // 昨日没有记忆
         }
 
-        // 构建昨日记忆内容
-        $memoriesContent = "昨日记忆内容：\n";
-        foreach ($yesterdayMemories as $memory) {
-            $category = $memory['category'] == 'user_memory' ? '【用户资料】' : '【重要事件】';
-            $subCategory = $memory['sub_category'];
-            $content = $memory['content'];
-            $memoriesContent .= "{$category}({$subCategory})：{$content}\n";
+
+        if ($lang == '繁体中文') {
+            // 构建昨日记忆内容
+            $memoriesContent = "昨日记忆内容：\n";
+            foreach ($yesterdayMemories as $memory) {
+                $category = $memory['category'] == 'user_memory' ? '【用户资料】' : '【重要事件】';
+                $subCategory = $memory['sub_category'];
+                $content = $memory['content'];
+                $memoriesContent .= "{$category}({$subCategory})：{$content}\n";
+            }
+        } else {
+            // 构建昨日记忆内容
+            $memoriesContent = "Yesterday's Memories:\n";
+            foreach ($yesterdayMemories as $memory) {
+                $category = $memory['category'] == 'user_memory' ? '【User Profile】' : '【Important Event】';
+                $subCategory = $memory['sub_category'];
+                $content = $memory['content'];
+                $memoriesContent .= "{$category}({$subCategory})：{$content}\n";
+            }
         }
 
         // 构建昨日记忆简单内容（用于日记生成）
@@ -129,12 +144,13 @@ class DailyMemorySummaryJob
         }
         $simpleMemoriesContent = implode(', ', $simpleMemories);
 
+
         // 生成记忆总结
         $summaryResult = false;
         if (!$hasSummary) {
             try {
                 // 构建每日记忆总结提示词
-                $dailySummaryPrompt = $this->buildDailyMemorySummaryPrompt($memoriesContent, date('Y-m-d', strtotime('-1 day')));
+                $dailySummaryPrompt = $this->buildDailyMemorySummaryPrompt($memoriesContent, date('Y-m-d', strtotime('-1 day')), $lang);
                 // 调用OpenAI API生成总结
                 $summaryResponse = OpenRouterService::chat([$dailySummaryPrompt]);
 
@@ -200,69 +216,68 @@ class DailyMemorySummaryJob
      * @param string $date 日期
      * @return array
      */
-    private function buildDailyMemorySummaryPrompt(string $memoriesContent, string $date): array
+    private function buildDailyMemorySummaryPrompt(string $memoriesContent, string $date, string $lang): array
     {
+        // 获取模板
+        // 获取模板
+        if ($lang == "繁体中文") {
+            $template = DB::name('config')->where(['id' => 21])->value('value');
+        } else {
+            $template = DB::name('config')->where(['id' => 22])->value('value');
+        }
+        // 初始化 Twig
+        $loader = new ArrayLoader([
+            'summaryPrompt' => $template,
+        ]);
+        $twig = new Environment($loader);
+
+        $variables = [
+            'data' => $date,
+            'memoriesContent' => $memoriesContent,
+        ];
+        $prompt = $twig->render('summaryPrompt', $variables);
         // 每日记忆总结提示词
         $prompt = [
             "role" => "system",
-            "content" => "## 目標
-請分析以下昨日（{$date}）的所有記憶內容，總結成一段精簡的回顧。\n\n## 具體要求
-1. **總結範圍**：全面覆蓋昨日所有記憶的核心信息
-2. **字數限制**：嚴格控制在200字以內
-3. **內容要求**：
-   - 保留最重要的用戶資料更新
-   - 保留最重要的事件發展和情感變化
-   - 忽略重複或不重要的細節
-   - 使用客觀、簡潔的語言
-4. **格式要求**：
-   - 以第一人称視角總結（模擬角色的回憶）
-   - 突出當日的重要事件和關鍵信息
-   - 保持時間邏輯順序
-\n## 輸出格式
-- ***僅***可輸出JSON格式，嚴禁任何解釋、註釋、說明文字
-- **必須直接以 `{` 起始，`}` 結尾**
-- 只允許以下格式：
-\```json
-{
- \"memories\": [
-    {
-      \"content\": \"[總結內容]\",
-      \"category\": \"medium_memory\",
-      \"sub_category\": \"daily_summary\"
-    }
-  ]
-}
-\```
-\n## 昨日記憶內容
-{$memoriesContent}"
+            "content" => $prompt,
         ];
+        //         $prompt = [
+        //             "role" => "system",
+        //             "content" => "## 目標
+        // 請分析以下昨日（{$date}）的所有記憶內容，總結成一段精簡的回顧。\n\n## 具體要求
+        // 1. **總結範圍**：全面覆蓋昨日所有記憶的核心信息
+        // 2. **字數限制**：嚴格控制在200字以內
+        // 3. **內容要求**：
+        //    - 保留最重要的用戶資料更新
+        //    - 保留最重要的事件發展和情感變化
+        //    - 忽略重複或不重要的細節
+        //    - 使用客觀、簡潔的語言
+        // 4. **格式要求**：
+        //    - 以第一人称視角總結（模擬角色的回憶）
+        //    - 突出當日的重要事件和關鍵信息
+        //    - 保持時間邏輯順序
+        // \n## 輸出格式
+        // - ***僅***可輸出JSON格式，嚴禁任何解釋、註釋、說明文字
+        // - **必須直接以 `{` 起始，`}` 結尾**
+        // - 只允許以下格式：
+        // \```json
+        // {
+        //  \"memories\": [
+        //     {
+        //       \"content\": \"[總結內容]\",
+        //       \"category\": \"medium_memory\",
+        //       \"sub_category\": \"daily_summary\"
+        //     }
+        //   ]
+        // }
+        // \```
+        // \n## 昨日記憶內容
+        // {$memoriesContent}"
+        //         ];
 
         return $prompt;
     }
 
-    /**
-     * 构建记忆总结提示词
-     * @param array $chatHistory 聊天历史
-     * @return array
-     */
-    public static function buildMemorySummaryPrompt($chatHistory): array
-    {
-        // 构建对话内容
-        $conversation = "<conversation>\n\n";
-        foreach ($chatHistory as $log) {
-            $conversation .= "    <user> (User name: 向晚):{$log['question']} </user>\n";
-            $conversation .= "    <assistant> (Assistant name: 封澈):{$log['answer']} </assistant>\n";
-        }
-        $conversation .= "\n</conversation>";
-
-        // 记忆总结提示词
-        $prompt = [
-            "role" => "system",
-            "content" => "## 目標\n請分析 `user` 和 `assistant` 之間的對話，萃取兩大類資訊：「個人資料」與「重要事件」。\n\n## 具體任務\n\n### 1. 萃取個人資料類資訊（user_memory）\n\n- 請根據下列子分類萃取資訊，每一類僅需提供最重要或最新的一筆：\n  - \"nickname_of_user\"：Assistant對user的唯一稱呼，不可有任何說明\n  - \"user_likes\"：user喜歡的事物\n  - \"user_dislikes\"：user不喜歡的事物\n  - \"location\"：目前事件發生地點（如「家裡」、「海邊」等）\n  - \"other\"：僅萃取user背景（教育、職業、家鄉）、家庭關係（父母/兄弟姐妹/子女/配偶/寵物等），以及user和assistant間的關係，其他均需排除\n- 絕對不可萃取下列資訊：\n  - 外貌描述（如髮色、眼睛顏色等）\n  - 關係弱化性描述（如「關係很好」）\n\n### 2. 重要事件（medium_memory，子分類 memory）\n\n- 萃取user與虛擬角色間的重要互動，僅保留核心結果：\n  - 與時間節點相關的描述資訊\n  - 情感或關係的重大轉變（如表白、分手、建立關係、結婚等）\n  - 重大決定或承諾\n  - 即將發生的重要計劃\n  - 特殊紀念日或里程碑（具體時間需保留）\n- 同主題相關事件須合併為單一條目，僅簡明記錄核心結果，省略過程細節。\n- 每筆事件須以精簡語句描述，需包含主要角色姓名（如無暱稱請以「用戶」稱之）。\n- 忽略所有以 ** 或（）標註的個人感受、描述或動作。\n- 若僅為問答、無帶來重要新資訊者，不視為事件。\n\n## 輸出格式要求\n\n- ***僅***可輸出JSON格式，嚴禁任何解釋、註釋、說明文字，亦不可包含任何符號（如markdown標記、空行或多餘字元）\n- **必須直接以 `{` 起始，`}` 結尾**\n- 只允許以下格式：\n\n{\n  \"memories\": [\n    {\n      \"content\": \"\",\n      \"category\": \"\",\n      \"sub_category\": \"\"\n    }\n  ]\n}\n\n## 規則總結\n\n- 今天日期為 " . date('Y-m-d') . ".\n- 各內容必須嚴格歸類（category 僅能為 \"medium_memory\" 或 \"user_memory\"，sub_category 僅可為 \"nickname_of_user\"、\"user_likes\"、\"user_dislikes\"、\"location\"、\"memory\"、\"other\"）。\n- 只可輸出最終JSON結果，嚴禁任何解釋、推理或多餘內容\n- 禁止複製或引用本提示示例內容。\n- 僅能使用繁體中文作答。\n\n## 對話內容\n{$conversation}"
-        ];
-
-        return $prompt;
-    }
 
 
     /**
@@ -323,10 +338,23 @@ class DailyMemorySummaryJob
      * @param int $roleId 角色ID
      * @return array
      */
-    private function buildDailyDiaryPrompt($memoriesContent, $userId, $roleId): array
+    private function buildDailyDiaryPrompt($memoriesContent, $userId, $roleId, $lang = "中文繁体"): array
     {
         // 获取角色信息
         $roleData = Db::name('role')->where(['id' => $roleId])->find();
+
+        // 获取模板
+        if ($lang == "繁体中文") {
+            $template = DB::name('config')->where(['id' => 20])->value('value');
+        } else {
+            $template = DB::name('config')->where(['id' => 19])->value('value');
+        }
+        // 初始化 Twig
+        $loader = new ArrayLoader([
+            'dailyDiaryPrompt' => $template,
+        ]);
+        $twig = new Environment($loader);
+
 
         // 获取用户信息
         $userPresume = Db::name('user_presume')->where(['uid' => $userId, 'role_id' => $roleId])->find();
@@ -342,24 +370,38 @@ class DailyMemorySummaryJob
         $roleNickname = $roleData['name'] ?? '角色';
         $roleGender = $roleData['gender'] ?? 'WOMAN';
 
+        $variables = [
+            'memoriesContent' => $memoriesContent,
+            'userNickname' => $userNickname,
+            'userGender' => $userGender,
+            'roleNickname' => $roleNickname,
+            'roleGender' => $roleGender,
+            'lang' => $lang,
+        ];
+        $prompt = $twig->render('dailyDiaryPrompt', $variables);
+
+        //         $prompt = [
+        //             "role" => "system",
+        //             "content" => "Your task is to summarize and polish the memory information between `user` and `assistant` in the form of a diary: 
+        //  <memory> 
+        //  {$memoriesContent} 
+        //  </memory> 
+
+        //  #Character background information 
+        //  `user` nickname: `{$userNickname}` and gender: '{$userGender}' 
+        //  `assistant` nickname: `{$roleNickname}` and gender: '{$roleGender}' 
+
+        //  Output rules: 
+        //  1. Generate a diary entry as {$roleNickname}. 
+        //  2. The content should be sweet and have a human touch. 
+        //  3. Do not generate titles or dates. 
+        //  4. The output language is `Traditional Chinese`. "
+        //         ];
+
         $prompt = [
             "role" => "system",
-            "content" => "Your task is to summarize and polish the memory information between `user` and `assistant` in the form of a diary: 
- <memory> 
- {$memoriesContent} 
- </memory> 
- 
- #Character background information 
- `user` nickname: `{$userNickname}` and gender: '{$userGender}' 
- `assistant` nickname: `{$roleNickname}` and gender: '{$roleGender}' 
- 
- Output rules: 
- 1. Generate a diary entry as {$roleNickname}. 
- 2. The content should be sweet and have a human touch. 
- 3. Do not generate titles or dates. 
- 4. The output language is `Traditional Chinese`. "
+            "content" => $prompt,
         ];
-
         return $prompt;
     }
 }
