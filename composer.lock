@@ -4,7 +4,11 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
+<<<<<<< HEAD
+    "content-hash": "109d6a32918d5979db442201ef1a5ae6",
+=======
     "content-hash": "307f3a43e66ae567c64ef0d8a788ae59",
+>>>>>>> 086f787c40e07742a336109b6b20ff5c97751ccb
     "packages": [
         {
             "name": "carbonphp/carbon-doctrine-types",
@@ -150,13 +154,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/thephpleague/flysystem/zipball/3239285c825c152bcc315fe0e87d6b55f5972ed1",
                 "reference": "3239285c825c152bcc315fe0e87d6b55f5972ed1",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "shasum": ""
             },
             "require": {
                 "ext-fileinfo": "*",
@@ -250,13 +248,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/thephpleague/flysystem-cached-adapter/zipball/d1925efb2207ac4be3ad0c40b8277175f99ffaff",
                 "reference": "d1925efb2207ac4be3ad0c40b8277175f99ffaff",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "shasum": ""
             },
             "require": {
                 "league/flysystem": "~1.0",
@@ -297,23 +289,17 @@
         },
         {
             "name": "league/mime-type-detection",
-            "version": "1.15.0",
+            "version": "1.16.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thephpleague/mime-type-detection.git",
-                "reference": "ce0f4d1e8a6f4eb0ddff33f57c69c50fd09f4301"
+                "reference": "2d6702ff215bf922936ccc1ad31007edc76451b9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thephpleague/mime-type-detection/zipball/ce0f4d1e8a6f4eb0ddff33f57c69c50fd09f4301",
-                "reference": "ce0f4d1e8a6f4eb0ddff33f57c69c50fd09f4301",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "url": "https://api.github.com/repos/thephpleague/mime-type-detection/zipball/2d6702ff215bf922936ccc1ad31007edc76451b9",
+                "reference": "2d6702ff215bf922936ccc1ad31007edc76451b9",
+                "shasum": ""
             },
             "require": {
                 "ext-fileinfo": "*",
@@ -343,7 +329,7 @@
             "description": "Mime-type detection for Flysystem",
             "support": {
                 "issues": "https://github.com/thephpleague/mime-type-detection/issues",
-                "source": "https://github.com/thephpleague/mime-type-detection/tree/1.15.0"
+                "source": "https://github.com/thephpleague/mime-type-detection/tree/1.16.0"
             },
             "funding": [
                 {
@@ -355,7 +341,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-01-28T23:22:08+00:00"
+            "time": "2024-09-21T08:32:55+00:00"
         },
         {
             "name": "nesbot/carbon",
@@ -474,13 +460,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/Nyholm/psr7/zipball/a71f2b11690f4b24d099d6b16690a90ae14fc6f3",
                 "reference": "a71f2b11690f4b24d099d6b16690a90ae14fc6f3",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "shasum": ""
             },
             "require": {
                 "php": ">=7.2",
@@ -548,16 +528,16 @@
         },
         {
             "name": "openai-php/client",
-            "version": "v0.18.0",
+            "version": "v0.15.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/openai-php/client.git",
-                "reference": "3362ab004fcfc9d77df3aff7671fbcbe70177cae"
+                "reference": "4db080738104be6a1144fa9f203c428ea4e58128"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/openai-php/client/zipball/3362ab004fcfc9d77df3aff7671fbcbe70177cae",
-                "reference": "3362ab004fcfc9d77df3aff7671fbcbe70177cae",
+                "url": "https://api.github.com/repos/openai-php/client/zipball/4db080738104be6a1144fa9f203c428ea4e58128",
+                "reference": "4db080738104be6a1144fa9f203c428ea4e58128",
                 "shasum": ""
             },
             "require": {
@@ -619,7 +599,7 @@
             ],
             "support": {
                 "issues": "https://github.com/openai-php/client/issues",
-                "source": "https://github.com/openai-php/client/tree/v0.18.0"
+                "source": "https://github.com/openai-php/client/tree/v0.15.0"
             },
             "funding": [
                 {
@@ -635,7 +615,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-10-31T18:58:57+00:00"
+            "time": "2025-08-04T17:44:21+00:00"
         },
         {
             "name": "paragonie/constant_time_encoding",
@@ -1013,13 +993,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/php-fig/cache/zipball/d11b50ad223250cf17b86e38383413f5a6764bf8",
                 "reference": "d11b50ad223250cf17b86e38383413f5a6764bf8",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "shasum": ""
             },
             "require": {
                 "php": ">=5.3.0"
@@ -1116,13 +1090,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/php-fig/container/zipball/c71ecc56dfe541dbd90c5360474fbc405f8d5963",
                 "reference": "c71ecc56dfe541dbd90c5360474fbc405f8d5963",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "shasum": ""
             },
             "require": {
                 "php": ">=7.4.0"
@@ -1217,26 +1185,20 @@
         },
         {
             "name": "psr/http-factory",
-            "version": "1.0.2",
+            "version": "1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-fig/http-factory.git",
-                "reference": "e616d01114759c4c489f93b099585439f795fe35"
+                "reference": "2b4765fddfe3b508ac62f829e852b1501d3f6e8a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-fig/http-factory/zipball/e616d01114759c4c489f93b099585439f795fe35",
-                "reference": "e616d01114759c4c489f93b099585439f795fe35",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "url": "https://api.github.com/repos/php-fig/http-factory/zipball/2b4765fddfe3b508ac62f829e852b1501d3f6e8a",
+                "reference": "2b4765fddfe3b508ac62f829e852b1501d3f6e8a",
+                "shasum": ""
             },
             "require": {
-                "php": ">=7.0.0",
+                "php": ">=7.1",
                 "psr/http-message": "^1.0 || ^2.0"
             },
             "type": "library",
@@ -1260,7 +1222,7 @@
                     "homepage": "https://www.php-fig.org/"
                 }
             ],
-            "description": "Common interfaces for PSR-7 HTTP message factories",
+            "description": "PSR-17: Common interfaces for PSR-7 HTTP message factories",
             "keywords": [
                 "factory",
                 "http",
@@ -1272,9 +1234,9 @@
                 "response"
             ],
             "support": {
-                "source": "https://github.com/php-fig/http-factory/tree/1.0.2"
+                "source": "https://github.com/php-fig/http-factory"
             },
-            "time": "2023-04-10T20:10:41+00:00"
+            "time": "2024-04-15T12:06:14+00:00"
         },
         {
             "name": "psr/http-message",
@@ -1331,23 +1293,17 @@
         },
         {
             "name": "psr/log",
-            "version": "3.0.1",
+            "version": "3.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-fig/log.git",
-                "reference": "79dff0b268932c640297f5208d6298f71855c03e"
+                "reference": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-fig/log/zipball/79dff0b268932c640297f5208d6298f71855c03e",
-                "reference": "79dff0b268932c640297f5208d6298f71855c03e",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "url": "https://api.github.com/repos/php-fig/log/zipball/f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
+                "reference": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
+                "shasum": ""
             },
             "require": {
                 "php": ">=8.0.0"
@@ -1381,9 +1337,9 @@
                 "psr-3"
             ],
             "support": {
-                "source": "https://github.com/php-fig/log/tree/3.0.1"
+                "source": "https://github.com/php-fig/log/tree/3.0.2"
             },
-            "time": "2024-08-21T13:31:24+00:00"
+            "time": "2024-09-11T13:17:53+00:00"
         },
         {
             "name": "psr/simple-cache",
@@ -1397,13 +1353,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/php-fig/simple-cache/zipball/764e0b3939f5ca87cb904f570ef9be2d78a07865",
                 "reference": "764e0b3939f5ca87cb904f570ef9be2d78a07865",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "shasum": ""
             },
             "require": {
                 "php": ">=8.0.0"
@@ -1662,23 +1612,17 @@
         },
         {
             "name": "symfony/http-client",
-            "version": "v7.4.0",
+            "version": "v7.4.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/http-client.git",
-                "reference": "ee5e0e0139ab506f6063a230e631bed677c650a4"
+                "reference": "d01dfac1e0dc99f18da48b18101c23ce57929616"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/http-client/zipball/ee5e0e0139ab506f6063a230e631bed677c650a4",
-                "reference": "ee5e0e0139ab506f6063a230e631bed677c650a4",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "url": "https://api.github.com/repos/symfony/http-client/zipball/d01dfac1e0dc99f18da48b18101c23ce57929616",
+                "reference": "d01dfac1e0dc99f18da48b18101c23ce57929616",
+                "shasum": ""
             },
             "require": {
                 "php": ">=8.2",
@@ -1745,7 +1689,7 @@
                 "http"
             ],
             "support": {
-                "source": "https://github.com/symfony/http-client/tree/v7.4.0"
+                "source": "https://github.com/symfony/http-client/tree/v7.4.3"
             },
             "funding": [
                 {
@@ -1765,27 +1709,21 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-11-20T12:32:50+00:00"
+            "time": "2025-12-23T14:50:43+00:00"
         },
         {
             "name": "symfony/http-client-contracts",
-            "version": "v3.5.2",
+            "version": "v3.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/http-client-contracts.git",
-                "reference": "ee8d807ab20fcb51267fdace50fbe3494c31e645"
+                "reference": "75d7043853a42837e68111812f4d964b01e5101c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/http-client-contracts/zipball/ee8d807ab20fcb51267fdace50fbe3494c31e645",
-                "reference": "ee8d807ab20fcb51267fdace50fbe3494c31e645",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "url": "https://api.github.com/repos/symfony/http-client-contracts/zipball/75d7043853a42837e68111812f4d964b01e5101c",
+                "reference": "75d7043853a42837e68111812f4d964b01e5101c",
+                "shasum": ""
             },
             "require": {
                 "php": ">=8.1"
@@ -1797,7 +1735,7 @@
                     "name": "symfony/contracts"
                 },
                 "branch-alias": {
-                    "dev-main": "3.5-dev"
+                    "dev-main": "3.6-dev"
                 }
             },
             "autoload": {
@@ -1833,7 +1771,7 @@
                 "standards"
             ],
             "support": {
-                "source": "https://github.com/symfony/http-client-contracts/tree/v3.5.2"
+                "source": "https://github.com/symfony/http-client-contracts/tree/v3.6.0"
             },
             "funding": [
                 {
@@ -1849,7 +1787,90 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-12-07T08:49:48+00:00"
+            "time": "2025-04-29T11:18:49+00:00"
+        },
+        {
+            "name": "symfony/polyfill-ctype",
+            "version": "v1.33.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/polyfill-ctype.git",
+                "reference": "a3cc8b044a6ea513310cbd48ef7333b384945638"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/polyfill-ctype/zipball/a3cc8b044a6ea513310cbd48ef7333b384945638",
+                "reference": "a3cc8b044a6ea513310cbd48ef7333b384945638",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2"
+            },
+            "provide": {
+                "ext-ctype": "*"
+            },
+            "suggest": {
+                "ext-ctype": "For best performance"
+            },
+            "type": "library",
+            "extra": {
+                "thanks": {
+                    "url": "https://github.com/symfony/polyfill",
+                    "name": "symfony/polyfill"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ],
+                "psr-4": {
+                    "Symfony\\Polyfill\\Ctype\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Gert de Pagter",
+                    "email": "BackEndTea@gmail.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony polyfill for ctype functions",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "compatibility",
+                "ctype",
+                "polyfill",
+                "portable"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/polyfill-ctype/tree/v1.33.0"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2024-09-09T11:45:10+00:00"
         },
         {
             "name": "symfony/polyfill-ctype",
@@ -2101,16 +2122,16 @@
         },
         {
             "name": "symfony/process",
-            "version": "v7.4.0",
+            "version": "v7.4.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/process.git",
-                "reference": "7ca8dc2d0dcf4882658313aba8be5d9fd01026c8"
+                "reference": "2f8e1a6cdf590ca63715da4d3a7a3327404a523f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/process/zipball/7ca8dc2d0dcf4882658313aba8be5d9fd01026c8",
-                "reference": "7ca8dc2d0dcf4882658313aba8be5d9fd01026c8",
+                "url": "https://api.github.com/repos/symfony/process/zipball/2f8e1a6cdf590ca63715da4d3a7a3327404a523f",
+                "reference": "2f8e1a6cdf590ca63715da4d3a7a3327404a523f",
                 "shasum": ""
             },
             "require": {
@@ -2142,7 +2163,7 @@
             "description": "Executes commands in sub-processes",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/process/tree/v7.4.0"
+                "source": "https://github.com/symfony/process/tree/v7.4.3"
             },
             "funding": [
                 {
@@ -2162,7 +2183,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-10-16T11:21:06+00:00"
+            "time": "2025-12-19T10:00:43+00:00"
         },
         {
             "name": "symfony/service-contracts",
@@ -2176,13 +2197,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/symfony/service-contracts/zipball/45112560a3ba2d715666a509a0bc9521d10b6c43",
                 "reference": "45112560a3ba2d715666a509a0bc9521d10b6c43",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "shasum": ""
             },
             "require": {
                 "php": ">=8.1",
@@ -2259,16 +2274,16 @@
         },
         {
             "name": "symfony/translation",
-            "version": "v7.4.0",
+            "version": "v7.4.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/translation.git",
-                "reference": "2d01ca0da3f092f91eeedb46f24aa30d2fca8f68"
+                "reference": "7ef27c65d78886f7599fdd5c93d12c9243ecf44d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/translation/zipball/2d01ca0da3f092f91eeedb46f24aa30d2fca8f68",
-                "reference": "2d01ca0da3f092f91eeedb46f24aa30d2fca8f68",
+                "url": "https://api.github.com/repos/symfony/translation/zipball/7ef27c65d78886f7599fdd5c93d12c9243ecf44d",
+                "reference": "7ef27c65d78886f7599fdd5c93d12c9243ecf44d",
                 "shasum": ""
             },
             "require": {
@@ -2335,7 +2350,7 @@
             "description": "Provides tools to internationalize your application",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/translation/tree/v7.4.0"
+                "source": "https://github.com/symfony/translation/tree/v7.4.3"
             },
             "funding": [
                 {
@@ -2355,7 +2370,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-11-27T13:27:24+00:00"
+            "time": "2025-12-29T09:31:36+00:00"
         },
         {
             "name": "symfony/translation-contracts",
@@ -2441,23 +2456,17 @@
         },
         {
             "name": "topthink/framework",
-            "version": "v8.1.2",
+            "version": "v8.1.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/top-think/framework.git",
-                "reference": "8faec5c9b7a7f2a66ca3140a57e81bd6cd37567c"
+                "reference": "e4207e98b66f92d26097ed6efd535930cba90e8f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/top-think/framework/zipball/8faec5c9b7a7f2a66ca3140a57e81bd6cd37567c",
-                "reference": "8faec5c9b7a7f2a66ca3140a57e81bd6cd37567c",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "url": "https://api.github.com/repos/top-think/framework/zipball/e4207e98b66f92d26097ed6efd535930cba90e8f",
+                "reference": "e4207e98b66f92d26097ed6efd535930cba90e8f",
+                "shasum": ""
             },
             "require": {
                 "ext-ctype": "*",
@@ -2508,29 +2517,23 @@
             ],
             "support": {
                 "issues": "https://github.com/top-think/framework/issues",
-                "source": "https://github.com/top-think/framework/tree/v8.1.2"
+                "source": "https://github.com/top-think/framework/tree/v8.1.3"
             },
-            "time": "2025-01-14T08:04:03+00:00"
+            "time": "2025-07-14T03:48:44+00:00"
         },
         {
             "name": "topthink/think-container",
-            "version": "v3.0.1",
+            "version": "v3.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/top-think/think-container.git",
-                "reference": "a24d442a02fb2a4716de232ff1a4f006c178a370"
+                "reference": "b2df244be1e7399ad4c8be1ccc40ed57868f730a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/top-think/think-container/zipball/a24d442a02fb2a4716de232ff1a4f006c178a370",
-                "reference": "a24d442a02fb2a4716de232ff1a4f006c178a370",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "url": "https://api.github.com/repos/top-think/think-container/zipball/b2df244be1e7399ad4c8be1ccc40ed57868f730a",
+                "reference": "b2df244be1e7399ad4c8be1ccc40ed57868f730a",
+                "shasum": ""
             },
             "require": {
                 "php": ">=8.0",
@@ -2560,9 +2563,9 @@
             "description": "PHP Container & Facade Manager",
             "support": {
                 "issues": "https://github.com/top-think/think-container/issues",
-                "source": "https://github.com/top-think/think-container/tree/v3.0.1"
+                "source": "https://github.com/top-think/think-container/tree/v3.0.2"
             },
-            "time": "2025-01-07T08:19:23+00:00"
+            "time": "2025-04-07T03:21:51+00:00"
         },
         {
             "name": "topthink/think-filesystem",
@@ -2576,13 +2579,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/top-think/think-filesystem/zipball/e8e51adb9f3a3f3aac2aa3ef73b7b439100f777d",
                 "reference": "e8e51adb9f3a3f3aac2aa3ef73b7b439100f777d",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "shasum": ""
             },
             "require": {
                 "league/flysystem": "^1.1.4",
@@ -2620,23 +2617,17 @@
         },
         {
             "name": "topthink/think-helper",
-            "version": "v3.1.11",
+            "version": "v3.1.12",
             "source": {
                 "type": "git",
                 "url": "https://github.com/top-think/think-helper.git",
-                "reference": "1d6ada9b9f3130046bf6922fe1bd159c8d88a33c"
+                "reference": "fe277121112a8f1c872e169a733ca80bb11c4acb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/top-think/think-helper/zipball/1d6ada9b9f3130046bf6922fe1bd159c8d88a33c",
-                "reference": "1d6ada9b9f3130046bf6922fe1bd159c8d88a33c",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "url": "https://api.github.com/repos/top-think/think-helper/zipball/fe277121112a8f1c872e169a733ca80bb11c4acb",
+                "reference": "fe277121112a8f1c872e169a733ca80bb11c4acb",
+                "shasum": ""
             },
             "require": {
                 "php": ">=7.1.0"
@@ -2666,9 +2657,9 @@
             "description": "The ThinkPHP6 Helper Package",
             "support": {
                 "issues": "https://github.com/top-think/think-helper/issues",
-                "source": "https://github.com/top-think/think-helper/tree/v3.1.11"
+                "source": "https://github.com/top-think/think-helper/tree/v3.1.12"
             },
-            "time": "2025-04-07T06:55:59+00:00"
+            "time": "2025-12-26T09:58:29+00:00"
         },
         {
             "name": "topthink/think-orm",
@@ -2682,13 +2673,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/top-think/think-orm/zipball/715e55da149fe32a12d68ef10e5b00e70bd3dbec",
                 "reference": "715e55da149fe32a12d68ef10e5b00e70bd3dbec",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "shasum": ""
             },
             "require": {
                 "ext-json": "*",
@@ -2807,13 +2792,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/top-think/think-validate/zipball/85063f6d4ef8ed122f17a36179dc3e0949b30988",
                 "reference": "85063f6d4ef8ed122f17a36179dc3e0949b30988",
-                "shasum": "",
-                "mirrors": [
-                    {
-                        "url": "https://mirrors.aliyun.com/composer/dists/%package%/%reference%.%type%",
-                        "preferred": true
-                    }
-                ]
+                "shasum": ""
             },
             "require": {
                 "php": ">=8.0",
