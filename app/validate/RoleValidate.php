@@ -13,13 +13,14 @@ class RoleValidate extends Validate
         'tags' => 'require',
         'name' => 'require|max:20',
         'gender' => 'require|in:男,女,未知',
+        'lang' => 'require|in:zh-Hant,en',
         'age' => 'require|number|between:18,999',
         'occupation' => 'require|max:50',
         'desc' => 'require|max:3000',
         'character' => 'max:3000',
         'greet_message' => 'require|max:600',
     ];
-    
+
     // 错误信息
     protected $message = [
         'avatar_url.require' => '角色头像不能为空',
@@ -39,11 +40,12 @@ class RoleValidate extends Validate
         'character.max' => '智能体设定不能超过3000个字符',
         'greet_message.require' => '请输入角色的第一句话',
         'greet_message.max' => '角色的第一句话不能超过600个字符',
+        'lang.require' => '请选择语言',
+        'lang.in' => '不支持的语言',
     ];
-    
+
     // 场景定义
     protected $scene = [
-        'create' => ['avatar_url', 'name', 'gender', 'tags','age', 'occupation', 'desc', 'character', 'greet_message', 'timbre_id'],
+        'create' => ['avatar_url', 'name', 'gender', 'tags', 'age', 'occupation', 'desc', 'character', 'greet_message', 'timbre_id'],
     ];
-    
 }

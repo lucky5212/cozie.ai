@@ -26,14 +26,16 @@ class UserController extends BaseController
      */
     public function getUserTagList(): Json
     {
+        $lang = $this->request->param('lang', 'zh-Hant');
         try {
-            $cacheKey = 'user_tag_list';
+            $cacheKey = 'user_tag_list_' . $lang;
             if (Cache::has($cacheKey)) {
                 $tags = Cache::get($cacheKey);
             } else {
                 // 查询启用状态的标签列表 
                 $tags = UserTag::where('status', '1')
                     ->order('id', 'asc')
+                    ->where('lang', $lang)
                     ->field('id, name')
                     ->select()
                     ->toArray();

@@ -33,7 +33,7 @@ class Role extends Model
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
-    public function getRoleList($limit = 10, $page = 1, $category_id = 1, $keyword = '')
+    public function getRoleList($limit = 10, $page = 1, $category_id = 1, $keyword = '', $lang = 'zh-Hant')
     {
 
         if ($keyword) {
@@ -41,6 +41,7 @@ class Role extends Model
                 ->with(['userProfile' => function (Query $query) {
                     $query->field('id,nickname,avatar');
                 }])
+                ->where('lang', $lang)
                 ->field('id,name,desc,occupation,avatar_url,category_id,user_id,chat_num,create_time')
                 ->where('name', 'like', '%' . strtoupper($keyword) . '%') //->page($page, $limit)->select();
                 ->where("status", 1);
@@ -49,12 +50,13 @@ class Role extends Model
                 ->with(['userProfile' => function (Query $query) {
                     $query->field('id,nickname,avatar');
                 }])
+                ->where('lang', $lang)
                 ->field('id,name,desc,occupation,avatar_url,category_id,user_id,chat_num,create_time')
-                ->where("status", 1)
-                ->where('category_id', $category_id);
+                ->where("status", 1);
+            // ->where('category_id', $category_id);
         }
         switch ($category_id) {
-            case 75:
+            case 75 or 135:
                 $list = $query->page($page, $limit)->order('chat_num', 'desc')->select();
                 $roleCount = $query->count();
                 break;
@@ -62,7 +64,7 @@ class Role extends Model
                 $list = $query->page(1, 50)->order('chat_num', 'desc')->select();
                 $roleCount = 50;
                 break;
-            case 77:
+            case 77 or 136:
                 $list = $query->page($page, $limit)->order('create_time', 'desc')->select();
                 $roleCount = $query->count();
                 break;

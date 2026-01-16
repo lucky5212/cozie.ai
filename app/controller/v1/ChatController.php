@@ -35,10 +35,12 @@ class ChatController extends BaseController
     public function tagList(): Json
     {
         $type = $this->request->get('type');
+        $lang = $this->request->get('lang', 'zh-Hant');
+
         try {
             // 缓存键名
-            $cacheKey = 'ai_role_tags_list_' . $type;
-            // 检查缓存是否存在
+            $cacheKey = 'ai_role_tags_list_' . $type . '_' . $lang;
+            // // 检查缓存是否存在
             if (Cache::has($cacheKey)) {
                 $tags = Cache::get($cacheKey);
                 return json([
@@ -47,9 +49,8 @@ class ChatController extends BaseController
                     'data' => $tags
                 ]);
             }
-
             // 获取标签列表，支持按类型过滤
-            $tags = (new RoleTag())->tagList($type);
+            $tags = (new RoleTag())->tagList($type, $lang);
             // 设置缓存，有效期30分钟
             Cache::set($cacheKey, $tags, 1800);
             return json([
@@ -84,7 +85,8 @@ class ChatController extends BaseController
     public function chatModeList(): Json
     {
 
-        $list = Db::name('role_mode_config')->cache(true, 600)->field('id,name,price')->select();
+        $lang = $this->request->get('lang', 'zh-Hant');
+        $list = Db::name('role_mode_config')->where('lang', $lang)->cache(true, 600)->field('id,name,price')->select();
         return json([
             'code' => 200,
             'msg' => '请求成功',
@@ -106,6 +108,14 @@ class ChatController extends BaseController
                     'msg' => '未授权'
                 ]);
             }
+
+            $lang = $this->request->get('lang', 'zh-Hant');
+            if (!in_array($lang, ['zh-Hant', 'zh'])) {
+                return json([
+                    'code' => 400,
+                    'msg' => '不支持的语言'
+                ]);
+            }
             $userId = $token['uid'];
             // 获取请求参数
             $params = $this->request->post();
@@ -121,13 +131,14 @@ class ChatController extends BaseController
                 'custom_tags' => $params['custom_tags'] ?? '',
                 'tags' => $params['tags'] ?? '',
                 'desc' => $params['desc'] ?? '',
+                'lang' => $lang,
                 'greet_message' => $params['greet_message'] ?? '',
                 'character' => $params['character'] ?? '',
                 'category_id' => $params['category_id'] ?? 0,
                 'timbre_id' => $params['timbre_id'] ?? 0,
                 'status' => $params['is_private'] ?? 0,
                 'create_time' => date('Y-m-d H:i:s'),
-                'update_time' => date('Y-m-d H:i:s')
+                'update_time' => date('Y-m-d H:i:s'),
             ];
 
             // 处理info参数（事件）
@@ -209,7 +220,6 @@ class ChatController extends BaseController
                     'msg' => $validate->getError()
                 ]);
             }
-
             // 准备角色数据
             $roleData = [
                 'user_id' => $userId,
@@ -218,6 +228,7 @@ class ChatController extends BaseController
                 'age' => $params['age'],
                 'gender' => $params['gender'],
                 'occupation' => $params['occupation'],
+                'lang' => $params['lang'],
                 'custom_tags' => $params['custom_tags'] ?? '',
                 'tags' => $params['tags'],
                 'desc' => $params['desc'],
@@ -320,10 +331,8 @@ class ChatController extends BaseController
             ]);
         }
         $userId = $token['uid'];
-
         // 获取请求参数
         $params = $this->request->post();
-
         // 使用验证器验证参数
         $validate = new RoleValidate();
         if (!$validate->scene('create')->check($params)) {
@@ -464,7 +473,9 @@ class ChatController extends BaseController
         $category_id = $this->request->param('category_id', 1);
         $keyword = $this->request->param('keyword', '');
         $role = new Role();
-        $roleList =  $role->getRoleList($limit, $page, $category_id, $keyword);
+        $lang = Db::name('role_tag')->where(['id' => $category_id])->value('lang');
+
+        $roleList =  $role->getRoleList($limit, $page, $category_id, $keyword, $lang);
         return json([
             'code' => 200,
             'msg' => '请求成功',
@@ -1346,15 +1357,12 @@ class ChatController extends BaseController
         }
         $userId = $token['uid'];
         $roleId = $this->request->param('role_id');
-        $lang = $this->request->param('lang', '繁体中文');
-
         if (!$roleId) {
             return json([
                 'code' => 400,
                 'msg' => '角色ID不能为空'
             ]);
         }
-
 
         $chatCount = Db::name('role_chat_history')->where(['user_id' => $userId, 'role_id' => $roleId])->where('status', 1)->count();
         if ($chatCount > 0 && $chatCount % 5 == 0) {
@@ -1385,7 +1393,7 @@ class ChatController extends BaseController
                     ->select()
                     ->reverse();
 
-                $memoryPrompt = $this->buildMemorySummaryPrompt($chatHistory, $username, $roleData['name'], $lang);
+                $memoryPrompt = $this->buildMemorySummaryPrompt($chatHistory, $username, $roleData['name'], $roleData['lang']);
                 // 调用OpenAI API生成记忆
                 $memoriesResponse = OpenRouterService::chat([$memoryPrompt]);
                 // 解析记忆数据
@@ -1512,7 +1520,7 @@ class ChatController extends BaseController
         //     "content" => "## 目標\n請分析 `user` 和 `assistant` 之間的對話，萃取兩大類資訊：「個人資料」與「重要事件」。\n\n## 具體任務\n\n### 1. 萃取個人資料類資訊（user_memory）\n\n- 請根據下列子分類萃取資訊，每一類僅需提供最重要或最新的一筆：\n  - \"nickname_of_user\"：Assistant對user的唯一稱呼，不可有任何說明\n  - \"user_likes\"：user喜歡的事物\n  - \"user_dislikes\"：user不喜歡的事物\n  - \"location\"：目前事件發生地點（如「家裡」、「海邊」等）\n  - \"other\"：僅萃取user背景（教育、職業、家鄉）、家庭關係（父母/兄弟姐妹/子女/配偶/寵物等），以及user和assistant間的關係，其他均需排除\n- 絕對不可萃取下列資訊：\n  - 外貌描述（如髮色、眼睛顏色等）\n  - 關係弱化性描述（如「關係很好」）\n\n### 2. 重要事件（medium_memory，子分類 memory）\n\n- 萃取user與虛擬角色間的重要互動，僅保留核心結果：\n  - 與時間節點相關的描述資訊\n  - 情感或關係的重大轉變（如表白、分手、建立關係、結婚等）\n  - 重大決定或承諾\n  - 即將發生的重要計劃\n  - 特殊紀念日或里程碑（具體時間需保留）\n- 同主題相關事件須合併為單一條目，僅簡明記錄核心結果，省略過程細節。\n- 每筆事件須以精簡語句描述，需包含主要角色姓名（如無暱稱請以「用戶」稱之）。\n- 忽略所有以 ** 或（）標註的個人感受、描述或動作。\n- 若僅為問答、無帶來重要新資訊者，不視為事件。\n\n## 輸出格式要求\n\n- ***僅***可輸出JSON格式，嚴禁任何解釋、註釋、說明文字，亦不可包含任何符號（如markdown標記、空行或多餘字元）\n- **必須直接以 `{` 起始，`}` 結尾**\n- 只允許以下格式：\n\n{\n  \"memories\": [\n    {\n      \"content\": \"\",\n      \"category\": \"\",\n      \"sub_category\": \"\"\n    }\n  ]\n}\n\n## 規則總結\n\n- 今天日期為 " . date('Y-m-d') . ".\n- 各內容必須嚴格歸類（category 僅能為 \"medium_memory\" 或 \"user_memory\"，sub_category 僅可為 \"nickname_of_user\"、\"user_likes\"、\"user_dislikes\"、\"location\"、\"memory\"、\"other\"）。\n- 只可輸出最終JSON結果，嚴禁任何解釋、推理或多餘內容\n- 禁止複製或引用本提示示例內容。\n- 僅能使用繁體中文作答。\n\n## 對話內容\n{$conversation}"
         // ];
         // 获取模板
-        if ($lang == "繁体中文") {
+        if ($lang == "zh-Hant") {
             $template = DB::name('config')->where(['id' => 23])->value('value');
         } else {
             $template = DB::name('config')->where(['id' => 24])->value('value');

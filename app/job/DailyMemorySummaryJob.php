@@ -23,7 +23,7 @@ class DailyMemorySummaryJob
         try {
             $userId = $data['user_id'];
             $roleId = $data['role_id'];
-            $lang = $data['lang'] ?? '繁体中文';
+            $lang = $data['lang'] ?? 'zh-Hant';
 
             Log::info('开始执行每日记忆总结队列任务', [
                 'user_id' => $userId,
@@ -117,7 +117,7 @@ class DailyMemorySummaryJob
         }
 
 
-        if ($lang == '繁体中文') {
+        if ($lang == 'zh-Hant') {
             // 构建昨日记忆内容
             $memoriesContent = "昨日记忆内容：\n";
             foreach ($yesterdayMemories as $memory) {
@@ -220,7 +220,7 @@ class DailyMemorySummaryJob
     {
         // 获取模板
         // 获取模板
-        if ($lang == "繁体中文") {
+        if ($lang == "zh-Hant") {
             $template = DB::name('config')->where(['id' => 21])->value('value');
         } else {
             $template = DB::name('config')->where(['id' => 22])->value('value');
@@ -344,7 +344,7 @@ class DailyMemorySummaryJob
         $roleData = Db::name('role')->where(['id' => $roleId])->find();
 
         // 获取模板
-        if ($lang == "繁体中文") {
+        if ($lang == "zh-Hant") {
             $template = DB::name('config')->where(['id' => 20])->value('value');
         } else {
             $template = DB::name('config')->where(['id' => 19])->value('value');
