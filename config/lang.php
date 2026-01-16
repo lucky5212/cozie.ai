@@ -7,7 +7,7 @@ return [
     // 默认语言
     'default_lang'    => env('lang.default_lang', 'zh-cn'),
     // 允许的语言列表
-    'allow_lang_list' => [],
+    'allow_lang_list' => ['zh-cn', 'en'],
     // 多语言自动侦测变量名
     'detect_var'      => 'lang',
     // 是否使用Cookie记录
@@ -21,6 +21,9 @@ return [
     // Accept-Language转义为对应语言包名称
     'accept_language' => [
         'zh-hans-cn' => 'zh-cn',
+        'en-us'      => 'en',
+        'en-uk'      => 'en',
+        'en'         => 'en',
     ],
     // 是否支持语言分组
     'allow_group'     => false,

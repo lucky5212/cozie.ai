@@ -30,6 +30,6 @@ class User extends Model
 
     public static function getUserinfo($uid)
     {
-        return self::where('id', $uid)->field('id,avatar,level,gender,successions,maxsuccessions,nickname,invitation_code,desc,work,tags_ids,tags_list,sign_num')->find();
+        return self::where('id', $uid)->field('id,avatar,level,gender,successions,maxsuccessions,nickname,invitation_code,desc,work,tags_ids,tags_list,sign_num,lang')->find();
     }
 }

@@ -35,8 +35,8 @@ class ChatController extends BaseController
     public function tagList(): Json
     {
         $type = $this->request->get('type');
-        $lang = $this->request->get('lang', 'zh-Hant');
 
+        $lang = $this->request->get('lang', 'zh-Hant');
         try {
             // 缓存键名
             $cacheKey = 'ai_role_tags_list_' . $type . '_' . $lang;
@@ -105,18 +105,12 @@ class ChatController extends BaseController
             if (!$token) {
                 return json([
                     'code' => 401,
-                    'msg' => '未授权'
+                    'msg' => lang_content('common.unauthorized', $this->request->param('lang'), '未授权')
                 ]);
             }
 
-            $lang = $this->request->get('lang', 'zh-Hant');
-            if (!in_array($lang, ['zh-Hant', 'zh'])) {
-                return json([
-                    'code' => 400,
-                    'msg' => '不支持的语言'
-                ]);
-            }
             $userId = $token['uid'];
+            $lang = DB::name('user')->where('id', $userId)->value('lang');
             // 获取请求参数
             $params = $this->request->post();
 

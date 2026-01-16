@@ -330,7 +330,7 @@ class UserController extends BaseController
             ]);
 
             // 记录金额日志
-            $moneyLogModel->addMoneyLog($userId, $signReward, $user->money, $user->money + $signReward, '签到奖励');
+            $moneyLogModel->addMoneyLog($userId, $signReward, $user->money, $user->money + $signReward, lang_content('money_log.sign_reward', $user->lang, '签到奖励'));
 
             // 更新用户信息
             $user->money += $signReward;
@@ -583,7 +583,7 @@ class UserController extends BaseController
                 $rewardAmount,
                 $user->money - $rewardAmount,
                 $user->money,
-                '任务奖励'
+                lang_content('money_log.task_reward', $user->lang, '任务奖励')
             );
 
             // 提交事务
@@ -709,10 +709,14 @@ class UserController extends BaseController
             $moneyLogModel = new MoneyLog();
             // 获取奖励数量
             $awardNum = Task::where('id', 4)->value('reward_diamond');
+            // 获取用户语言
+            $oldUserLang = isset($oldUserInfo['lang']) ? $oldUserInfo['lang'] : Db::name('user')->where(['id' => $oldUserInfo['id']])->value('lang', 'zh-cn');
+            $newUserLang = isset($newUserInfo['lang']) ? $newUserInfo['lang'] : Db::name('user')->where(['id' => $newUserInfo['id']])->value('lang', 'zh-cn');
+            
             // 老人奖励
-            $moneyLogModel->addMoneyLog($oldUserInfo['id'], $awardNum, $oldUserInfo['money'], $oldUserInfo['money'] + $awardNum, '邀新奖励');
+            $moneyLogModel->addMoneyLog($oldUserInfo['id'], $awardNum, $oldUserInfo['money'], $oldUserInfo['money'] + $awardNum, lang_content('money_log.invite_reward', $oldUserLang, '邀新奖励'));
             // 新人奖励
-            $moneyLogModel->addMoneyLog($newUserInfo['id'], $awardNum, $newUserInfo['money'], $newUserInfo['money'] + $awardNum, '邀新奖励');
+            $moneyLogModel->addMoneyLog($newUserInfo['id'], $awardNum, $newUserInfo['money'], $newUserInfo['money'] + $awardNum, lang_content('money_log.invite_reward', $newUserLang, '邀新奖励'));
             Db::name('user')->where('id', $oldUserInfo['id'])->update(['money' => $oldUserInfo['money'] + $awardNum]);
 
             // 更新用户邀请码状态

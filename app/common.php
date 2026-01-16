@@ -2,6 +2,7 @@
 // 应用公共文件
 
 use think\facade\Db;
+use think\facade\Lang;
 
 /**
  * 操作成功返回的数据
@@ -107,4 +108,93 @@ function cdnurl($url, $domain = false)
         $url = $domain . $url;
     }
     return $url;
+}
+
+/**
+ * 获取语言内容
+ * @param string $key 语言键名，格式：分组.键名，如：common.success
+ * @param string $lang 语言标识，如：zh-cn, en
+ * @param string $default 默认值，当找不到对应语言项时返回
+ * @return string 语言内容
+ */
+function lang_content($key, $lang = null, $default = '')
+{
+    // 如果没有指定语言，使用当前请求的语言或默认语言
+    if (is_null($lang)) {
+        // 使用 Lang 门面的 range 方法获取当前语言
+        $lang = Lang::range() ?: config('lang.default_lang');
+    }
+
+    // 确保语言包文件已加载
+    $langFile = root_path() . 'lang' . DIRECTORY_SEPARATOR . $lang . '.php';
+    if (is_file($langFile)) {
+        // 加载语言包文件
+        $langContent = include $langFile;
+
+        // 解析键名，支持多级分组
+        $keys = explode('.', $key);
+        $value = $langContent;
+
+        foreach ($keys as $k) {
+            if (!isset($value[$k])) {
+                // 找不到对应语言项，返回默认值
+                return $default;
+            }
+            $value = $value[$k];
+        }
+
+        return $value;
+    }
+
+    // 语言包文件不存在，返回默认值
+    return $default;
+}
+
+/**
+ * 设置当前语言
+ * @param string $lang 语言标识，如：zh-cn, en
+ * @return bool 是否设置成功
+ */
+function set_lang($lang)
+{
+    // 检查语言是否在允许列表中
+    $allowList = config('lang.allow_lang_list');
+    if (!in_array($lang, $allowList)) {
+        return false;
+    }
+
+    // 设置当前语言
+    Lang::setRange($lang);
+
+
+
+    // 如果启用了Cookie记录，更新Cookie
+    if (config('lang.use_cookie')) {
+        cookie(config('lang.cookie_var'), $lang, 3600 * 24 * 30);
+    }
+
+    return true;
+}
+
+/**
+ * 获取当前语言
+ * @return string 当前语言标识
+ */
+function get_lang()
+{
+    return Lang::range() ?: config('lang.default_lang');
+}
+
+
+
+/**
+ * 语言包获取方法
+ * @param string $name 语言变量名
+ * @param array $vars 变量替换
+ * @param string $lang 语言代码
+ * @return string
+ */
+function lang($name, $vars = [], $lang = '')
+{
+    return Lang::get($name, $vars, $lang);
 }

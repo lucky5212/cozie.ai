@@ -338,7 +338,7 @@ class DailyMemorySummaryJob
      * @param int $roleId 角色ID
      * @return array
      */
-    private function buildDailyDiaryPrompt($memoriesContent, $userId, $roleId, $lang = "中文繁体"): array
+    private function buildDailyDiaryPrompt($memoriesContent, $userId, $roleId, $lang = "zh-Hant"): array
     {
         // 获取角色信息
         $roleData = Db::name('role')->where(['id' => $roleId])->find();

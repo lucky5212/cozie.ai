@@ -37,7 +37,6 @@ class Login extends BaseController
         try {
             // 获取原始 POST 内容（iOS 端 JSON 提交）
             $data = request()->data;
-
             // 检查解密后的数据是否存在
             if (!isset($data) || !is_array($data)) {
                 return json(['code' => 400, 'msg' => '无效的请求数据']);
@@ -48,7 +47,12 @@ class Login extends BaseController
                 return json(['code' => 400, 'msg' => '缺少 device_id']);
             }
 
+
             $deviceId = trim($data['device_id']);
+            $lang = $data['lang'];
+            if (!in_array($lang, ['zh-Hant', 'en'])) {
+                return json(['code' => 400, 'msg' => '不支持的语言']);
+            }
             // 业务模型
             $guestModel = new User();
             // 根据 device_id 查找已有游客
@@ -65,11 +69,12 @@ class Login extends BaseController
                     'avatar' => '/storage/upload/20260111/png/7d7572778214dce1f838b0c2ddbcbee1.png',
                     'invitation_code' => $inviteCode,
                     'money' => 100,
-                    'descv' => '',
+                    'desc' => '',
                     'work' => '',
                     'tags_ids' => '',
                     'tags_list' => '',
                     'status' => 'normal',
+                    'lang' => $lang,
                     'nickname' => 'User' . generateRandomCode(4),
                 ]);
                 // 插入系统消息
@@ -77,13 +82,31 @@ class Login extends BaseController
 
                 // 插入金额日志
                 $moneyLogModel = new MoneyLog();
-                $moneyLogModel->addMoneyLog($uid, 100, 0, 100, '新人奖励');
+                // 使用语言包中的内容
+                $rewardName = lang('money_log.new_user_reward', [], $lang);
+                // 如果获取不到语言内容，使用默认值
+                if (empty($rewardName)) {
+                    $rewardName = '新人奖励';
+                }
+                $moneyLogModel->addMoneyLog($uid, 100, 0, 100, $rewardName);
+
+                // 使用语言包中的系统消息内容
+                $messageType = lang('system_message.type', [], $lang);
+                $messageContent = lang('system_message.new_user_notice', [], $lang);
+
+                // 如果获取不到语言内容，使用默认值
+                if (empty($messageType)) {
+                    $messageType = '系统消息';
+                }
+                if (empty($messageContent)) {
+                    $messageContent = '新用戶通知：新人福利到！免费贈送 100 钻石，快去和心怡角色開啟故事吧~';
+                }
 
                 $systemMessageModel->insertSystemMessage([
                     'user_id' => $uid,
-                    'type' => '系统消息',
+                    'type' => $messageType,
                     'event_user_id' => 0,
-                    'content' => '新用戶通知：新人福利到！免费贈送 100 钻石，快去和心怡角色開啟故事吧~',
+                    'content' => $messageContent,
                     'create_time' => time(),
                 ]);
             } else {
@@ -113,6 +136,7 @@ class Login extends BaseController
             $tokenData = array(
                 'token' => $_token,
                 'uid'  => $uid,
+                'lang' => $lang,
             );
             $token = JwtAuth::signToken($tokenData);
             $userinfo = $guestModel->getUserinfo($uid);
