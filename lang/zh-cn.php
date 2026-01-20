@@ -56,8 +56,10 @@ return [
         'sign_reward'      => '签到奖励',
         'invite_reward'    => '邀新奖励',
         'task_reward'      => '任务奖励',
+        'diamond_reward'   => '购买奖励',
+        'subscription_reward' => '订阅奖励',
     ],
-    
+
     // 系统消息相关
     'system_message' => [
         'type' => '系统消息',

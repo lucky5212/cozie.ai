@@ -14,7 +14,7 @@ return [
         'server_error'  => 'Server error',
         'no_permission' => 'No permission',
     ],
-    
+
     // Chat related
     'chat' => [
         'send_message'        => 'Send message',
@@ -28,7 +28,7 @@ return [
         'title_required'      => 'Title is required',
         'content_required'    => 'Content is required',
     ],
-    
+
     // User related
     'user' => [
         'login_success'    => 'Login successful',
@@ -41,7 +41,7 @@ return [
         'email_required'    => 'Email is required',
         'password_required' => 'Password is required',
     ],
-    
+
     // 收藏相关
     'collection' => [
         'collected'     => 'Collected successfully',
@@ -49,15 +49,17 @@ return [
         'collection_list' => 'Collection list',
         'no_collections'  => 'No collections yet',
     ],
-    
+
     // 金额日志相关
     'money_log' => [
         'new_user_reward'  => 'New user reward',
         'sign_reward'      => 'Sign-in reward',
         'invite_reward'    => 'Invitation reward',
         'task_reward'      => 'Task reward',
+        'diamond_reward'   => 'Purchase reward',
+        'subscription_reward' => 'Subscription reward',
     ],
-    
+
     // 系统消息相关
     'system_message' => [
         'new_user_notice' => 'New user notice: Welcome gift! 100 diamonds have been given for free. Go start a story with your favorite character now~',

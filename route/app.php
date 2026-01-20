@@ -93,4 +93,20 @@ Route::group('api/V1', function () {
     Route::delete('memory/:memory_id', 'app\controller\v1\MemoryController@delMemoryCapsule'); //删除记忆胶囊
     Route::post('editMemoryCapsule', 'app\controller\v1\MemoryController@editMemoryCapsule'); //编辑记忆胶囊
 
+
+    // 单次支付相关路由
+    Route::get('pay/getProducts', 'app\controller\v1\PayController@getProducts'); // 获取苹果内购产品列表
+    Route::post('pay/createOrder', 'app\controller\v1\PayController@createOrder'); // 创建单次支付订单
+    Route::post('pay/verifyReceiptWithOrder', 'app\controller\v1\PayController@verifyReceiptWithOrder'); // 验证单次支付收据
+    Route::get('pay/getPurchaseHistory', 'app\controller\v1\PayController@getPurchaseHistory'); // 获取购买历史
+
+    // 订阅相关路由
+    Route::get('pay/getSubscriptionProducts', 'app\controller\v1\PayController@getSubscriptionProducts'); // 获取所有可用的订阅产品
+    Route::post('pay/createSubscriptionOrder', 'app\controller\v1\PayController@createSubscriptionOrder'); // 创建订阅订单
+    Route::post('pay/verifySubscriptionReceipt', 'app\controller\v1\PayController@verifySubscriptionReceipt'); // 验证订阅收据
+    Route::get('pay/getSubscriptionStatus', 'app\controller\v1\PayController@getSubscriptionStatus'); // 获取用户订阅状态
+    Route::post('pay/handleWebhook', 'app\controller\v1\PayController@handleWebhook'); // 处理苹果服务器通知
+
+
+
 });
