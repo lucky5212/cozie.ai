@@ -107,6 +107,9 @@ Route::group('api/V1', function () {
     Route::get('pay/getSubscriptionStatus', 'app\controller\v1\PayController@getSubscriptionStatus'); // 获取用户订阅状态
     Route::post('pay/handleWebhook', 'app\controller\v1\PayController@handleWebhook'); // 处理苹果服务器通知
 
+    // 角色标签相关路由
+    Route::get('tagHomeList', 'app\controller\v1\ChatController@tagHomeList'); // 获取首页角色标签列表
+
 
 
 });

@@ -496,6 +496,7 @@ class PayController extends BaseController
      */
     public function handleWebhook()
     {
+
         $rawPostData = file_get_contents('php://input');
 
         try {

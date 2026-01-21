@@ -36,4 +36,11 @@ class RoleTag extends Model
         }
         return $this->where('status', 1)->where('id', 'not in', [75, 76, 77, 134, 135])->field('id,name,type')->where('lang', $lang)->select();
     }
+    public function tagHomeList($type = null, $lang = 'zh-Hant')
+    {
+        if ($type != 5) {
+            return $this->where('status', 1)->where('type', $type)->where('lang', $lang)->field('id,name,type')->select();
+        }
+        return $this->where('status', 1)->field('id,name,type')->where('lang', $lang)->select();
+    }
 }

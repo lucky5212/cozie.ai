@@ -66,6 +66,43 @@ class ChatController extends BaseController
         }
     }
 
+    /**
+     * 获取首页角色标签列表
+     * @return Json
+     */
+    public function tagHomeList(): Json
+    {
+        $type = $this->request->get('type');
+
+        $lang = $this->request->get('lang', 'zh-Hant');
+        try {
+            // 缓存键名
+            $cacheKey = 'ai_role_tag_home_list_' . $type . '_' . $lang;
+            // // 检查缓存是否存在
+            if (Cache::has($cacheKey)) {
+                $tags = Cache::get($cacheKey);
+                return json([
+                    'code' => 200,
+                    'msg' => '请求成功(缓存)',
+                    'data' => $tags
+                ]);
+            }
+            // 获取标签列表，支持按类型过滤
+            $tags = (new RoleTag())->tagList($type, $lang);
+            // 设置缓存，有效期30分钟
+            Cache::set($cacheKey, $tags, 1800);
+            return json([
+                'code' => 200,
+                'msg' => '请求成功',
+                'data' => $tags
+            ]);
+        } catch (\Exception $e) {
+            return json([
+                'code' => 500,
+                'msg' => '获取标签列表失败: ' . $e->getMessage()
+            ]);
+        }
+    }
 
     // 测试接口
     public function text()
