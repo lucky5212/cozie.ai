@@ -104,7 +104,6 @@ class OpenRouterService
         }
 
         $allErrors = [];
-
         // 遍历所有模型，依次尝试
         foreach ($models as $currentModel) {
             $attempt = 0;
@@ -118,7 +117,6 @@ class OpenRouterService
                         'messages' => $messages,
                         'temperature' => $temperature,
                     ]);
-
                     $content = $response->choices[0]->message->content;
 
                     if ($attempt > 0) {

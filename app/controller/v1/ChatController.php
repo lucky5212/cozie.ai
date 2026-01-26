@@ -17,6 +17,7 @@ use app\model\UserPresume;
 use app\validate\RoleValidate;
 use app\validate\UserPresumeValidate;
 use app\service\OpenRouterService;
+use Exception;
 use GuzzleHttp\Psr7\Message;
 use think\facade\Cache;
 use think\facade\Db;
@@ -66,6 +67,221 @@ class ChatController extends BaseController
         }
     }
 
+
+    /**
+     * AI推荐回复接口
+     * 根据最近的聊天记录生成推荐回复
+     * @return Json
+     */
+    public function recommendReply(): Json
+    {
+        try {
+            // 验证用户身份
+            $token = JwtAuth::decodeToken($this->request->header('Access-Token'));
+            if (!$token) {
+                return json([
+                    'code' => 401,
+                    'msg' => '未授权'
+                ]);
+            }
+
+            $userId = $token['uid'];
+            // 获取请求参数
+            $params = $this->request->post();
+            $roleId = $params['role_id'] ?? '';
+
+            // 验证参数
+            if (empty($roleId)) {
+                return json([
+                    'code' => 400,
+                    'msg' => '角色ID不能为空'
+                ]);
+            }
+
+            // 检查角色是否存在
+            $roleData = Db::name('role')->where(['id' => $roleId, 'user_id' => $userId])->find();
+            if (!$roleData) {
+                return json([
+                    'code' => 404,
+                    'msg' => '角色不存在'
+                ]);
+            }
+            $modeId = $params['mode_id'] ?? '1';
+            // 获取聊天模式 验证模式ID是否存在
+            $modeData = Db::name('role_mode_config')->where(['id' => $modeId])->find();
+            if (!$modeData) {
+                return json([
+                    'code' => 400,
+                    'msg' => '模式ID不存在'
+                ]);
+            }
+            // 构建请求消息
+            $prompt = $this->buildRequestMessage($roleData, $userId, $roleId, $modeData);
+
+            // 调用AI生成推荐回复
+            $content = OpenRouterService::chat([$prompt], 'deepseek/deepseek-chat-v3-0324', 0.7);
+
+            // 确保content是字符串类型
+            if (is_array($content)) {
+                $content = json_encode($content, JSON_UNESCAPED_UNICODE);
+            } elseif ($content === null) {
+                $content = '[]';
+            } else {
+                $content = (string)$content;
+            }
+
+            // 清理JSON格式（移除可能的标记）
+            $content = preg_replace('/^\'\'\'|\'\'\'$/s', '', $content);
+            $content = preg_replace('/^```json\s*|\s*```$/s', '', $content);
+
+            // 解析JSON
+            $replies = json_decode($content, true);
+            if (!is_array($replies)) {
+                throw new Exception('生成的回复格式错误');
+            }
+
+            // 记录日志
+            Log::info('AI推荐回复生成成功', [
+                'user_id' => $userId,
+                'role_id' => $roleId,
+                'replies' => $replies
+            ]);
+
+            return json([
+                'code' => 200,
+                'msg' => '生成成功',
+                'data' => [
+                    'replies' => $replies,
+                    'role_id' => $roleId
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('AI推荐回复生成失败', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return json([
+                'code' => 500,
+                'msg' => '生成失败: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * AI灵感生成接口
+     * 根据角色信息生成角色简介、第一句话或智能体设定
+     * @return Json
+     */
+    public function aiInspiration(): Json
+    {
+        try {
+            // 验证用户身份
+            $token = JwtAuth::decodeToken($this->request->header('Access-Token'));
+            if (!$token) {
+                return json([
+                    'code' => 401,
+                    'msg' => '未授权'
+                ]);
+            }
+
+            $lang = Db::name('user')->where('id', $token['uid'])->value('lang') ?? 'zh-Hant';
+            // 获取请求参数
+            $params = $this->request->post();
+            $type = $params['type'] ?? ''; // 生成类型: intro(简介), first_sentence(第一句话), agent_setup(智能体设定)
+            $gender = $params['gender'] ?? '';
+            $age = $params['age'] ?? '';
+            $name = $params['name'] ?? '';
+            $tags = $params['tags'] ?? [];
+            $identity = $params['occupation'] ?? '';
+            $category = $params['category_id'] ?? '';
+            $desc = $params['desc'] ?? '';
+            $greet_message = $params['greet_message'] ?? '';
+            $character = $params['character'] ?? '';
+
+
+            // 验证参数
+            if (!in_array($type, ['intro', 'first_sentence', 'agent_setup'])) {
+                return json([
+                    'code' => 400,
+                    'msg' => '无效的生成类型'
+                ]);
+            }
+            if (!empty($tags)) {
+                $tagNames = Db::name('role_tag')->where('id', 'in', $tags)->column('name');
+                $tags = implode(',', $tagNames);
+            } else {
+                $tags = '';
+            }
+            if (!empty($category)) {
+                $category = Db::name('role_tag')->where('id', $category)->value('name');
+            } else {
+                $category = '';
+            }
+
+
+
+            if (empty($name)) {
+                return json([
+                    'code' => 400,
+                    'msg' => '角色名称不能为空'
+                ]);
+            }
+
+            $promptTemplate = Db::name('config')->where('id', 25)->value('value');
+
+            // 构建Twig模板
+            $loader = new ArrayLoader([
+                'ai_inspiration' => $promptTemplate,
+            ]);
+
+            $twig = new Environment($loader, [
+                'autoescape' => false,
+            ]);
+
+            // 渲染模板
+            $prompt = $twig->render('ai_inspiration', [
+                'type' => $type,
+                'name' => $name,
+                'gender' => $gender,
+                'age' => $age,
+                'identity' => $identity,
+                'category' => $category,
+                'tags' => $tags,
+                'lang' => $lang
+            ]);
+
+            // 调用AI生成内容
+            $content = OpenRouterService::chat([
+                ['role' => 'system', 'content' => $prompt]
+            ], 'deepseek/deepseek-chat-v3-0324', 0.7);
+            // 记录日志
+            Log::info('AI灵感生成成功', [
+                'user_id' => $token['uid'],
+                'type' => $type,
+                'name' => $name,
+                'content' => $content
+            ]);
+
+            return json([
+                'code' => 200,
+                'msg' => '生成成功',
+                'data' => [
+                    'content' => $content,
+                    'type' => $type
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('AI灵感生成失败', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return json([
+                'code' => 500,
+                'msg' => '生成失败: ' . $e->getMessage()
+            ]);
+        }
+    }
+
     /**
      * 获取首页角色标签列表
      * @return Json
@@ -88,7 +304,7 @@ class ChatController extends BaseController
                 ]);
             }
             // 获取标签列表，支持按类型过滤
-            $tags = (new RoleTag())->tagList($type, $lang);
+            $tags = (new RoleTag())->tagHomeList($type, $lang);
             // 设置缓存，有效期30分钟
             Cache::set($cacheKey, $tags, 1800);
             return json([
@@ -305,18 +521,7 @@ class ChatController extends BaseController
                 // 创建角色
                 $roleId = Db::name('role')->insertGetId($roleData);
 
-                // // 处理角色标签
-                // $arr = explode(",", $params['tags']);
-                // $tag_data = [];
-                // foreach ($arr as $tag) {
-                //     $tag_data[] = [
-                //         'role_id' => $roleId,
-                //         'category_id' => $tag,
-                //     ];
-                // }
 
-                // 批量插入角色标签
-                // Db::name('role_category')->insertAll($tag_data);
 
                 // 批量插入事件
                 $event_data = [];
@@ -784,20 +989,49 @@ class ChatController extends BaseController
 
 
 
-    // 重新生成聊天
-    public function regenerateChat()
+
+
+    // 拼接消息 
+    public function buildRequestMessage($roleData, $userId, $roleId, $modeData)
     {
-        $roleId = $this->request->param('role_id', '');
-
-        if (empty($roleId)) {
-            return json([
-                'code' => 500,
-                'msg' => 'role_id不能为空'
-            ]);
+        // 获取最近聊天记录
+        $chatHistory = Db::name('role_chat_history')
+            ->where(['user_id' => $userId, 'role_id' => $roleId])
+            ->order('id', 'desc')
+            ->limit(5)
+            ->select()
+            ->reverse();
+        // 构建聊天历史文本
+        $chatHistoryText = '';
+        if (!empty($chatHistory)) {
+            foreach ($chatHistory as $log) {
+                $chatHistoryText .= "User: " . $log['question'] . "\n";
+                $chatHistoryText .= "Character: " . $log['answer'] . "\n";
+            }
+            $chatHistoryText .= "\n";
         }
+
+        // 如果没有聊天历史，使用角色的问候语
+        if (empty($chatHistoryText)) {
+            $chatHistoryText = "Character: " . ($roleData['greet_message'] ?? '你好！') . "\n";
+        }
+        // 获取 Twig 模板
+        $template =  $modeData['recommend_reply'];
+        // 初始化 Twig 
+        $loader = new ArrayLoader([
+            'recommendReply' => $template,
+        ]);
+        $twig = new Environment($loader);
+        $variables = [
+            'Content' => $chatHistoryText,
+        ];
+        $prompt = $twig->render('recommendReply', $variables);
+        $prompt = [
+            "role" => "system",
+            "content" => $prompt
+        ];
+        return $prompt;
     }
-
-
     /**
      * 与角色聊天
      * @return Json
@@ -847,7 +1081,7 @@ class ChatController extends BaseController
                 ]);
             }
             // 获取角色信息
-            $roleData = Db::name('role')->where(['id' => $roleId, 'user_id' => $userId])->find();
+            $roleData = Db::name('role')->where(['id' => $roleId])->find();
             if (!$roleData) {
                 return json([
                     'code' => 404,
@@ -1455,6 +1689,8 @@ class ChatController extends BaseController
             ]);
         }
     }
+
+
 
 
     /**

@@ -85,6 +85,9 @@ Route::group('api/V1', function () {
     Route::post('editChatHistory', 'app\controller\v1\ChatController@editChatHistory'); // 编辑聊天记录
     Route::post('createRoleDraft', 'app\controller\v1\ChatController@createRoleDraft'); // 创建角色草稿
     Route::get('roleDraftInfo', 'app\controller\v1\ChatController@roleDraftInfo'); // 草稿详情
+    Route::post('aiInspiration', 'app\controller\v1\ChatController@aiInspiration'); // AI灵感生成接口
+    Route::post('recommendReply', 'app\controller\v1\ChatController@recommendReply'); // AI推荐回复接口
+
     Route::post('saveIncantation', 'app\controller\v1\UserController@saveIncantation'); // 保存咒语
     Route::get('getIncantationList', 'app\controller\v1\UserController@getIncantationList'); // 获取咒语列表
     Route::post('chatHistoryCollect', 'app\controller\v1\CollectionController@chatHistoryCollect'); // 收藏聊天记录
