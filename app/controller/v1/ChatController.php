@@ -14,9 +14,11 @@ use app\model\RoleMemory;
 use app\model\RoleUserChat;
 use app\model\User;
 use app\model\UserPresume;
+use app\model\Voice;
 use app\validate\RoleValidate;
 use app\validate\UserPresumeValidate;
 use app\service\OpenRouterService;
+use app\service\MiniMaxService;
 use Exception;
 use GuzzleHttp\Psr7\Message;
 use think\facade\Cache;
@@ -2243,6 +2245,95 @@ class ChatController extends BaseController
             return json([
                 'code' => 500,
                 'msg' => '角色设定查看失败: ' . $e->getMessage()
+            ]);
+        }
+    }
+    /**
+     * 文本转语音接口
+     * 将文本转换为语音，用于播放聊天记录
+     * @return Json
+     */
+    public function textToSpeech(): Json
+    {
+        try {
+            $token = JwtAuth::decodeToken($this->request->header('Access-Token'));
+            if (!$token) {
+                return json([
+                    'code' => 401,
+                    'msg' => '未授权'
+                ]);
+            }
+
+            $userId = $token['uid'];
+            $params = $this->request->post();
+
+            $text = $params['text'] ?? '';
+            $voice = $params['voice'] ?? null;
+            $speed = $params['speed'] ?? null;
+            $pitch = $params['pitch'] ?? null;
+
+            if (empty($text)) {
+                return json([
+                    'code' => 400,
+                    'msg' => '文本内容不能为空'
+                ]);
+            }
+
+            if (mb_strlen($text) > 500) {
+                return json([
+                    'code' => 400,
+                    'msg' => '文本内容不能超过500字符'
+                ]);
+            }
+
+            $result = MiniMaxService::textToSpeech($text, $voice, $speed, $pitch);
+
+            Log::info('文本转语音成功', [
+                'user_id' => $userId,
+                'text_length' => mb_strlen($text),
+                'voice' => $voice,
+                'audio_url' => $result['audio_url']
+            ]);
+
+            return json([
+                'code' => 200,
+                'msg' => '语音生成成功',
+                'data' => $result
+            ]);
+        } catch (\Exception $e) {
+            Log::error('文本转语音失败', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return json([
+                'code' => 500,
+                'msg' => '语音生成失败: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * 获取可用音色列表
+     * @return Json
+     */
+    public function getVoices(): Json
+    {
+        try {
+            $lang = $this->request->get('lang', 'zh-Hant');
+            $voiceModel = new Voice();
+            $voices = $voiceModel->getAvailableVoices($lang);
+            return json([
+                'code' => 200,
+                'msg' => '获取成功',
+                'data' => $voices
+            ]);
+        } catch (\Exception $e) {
+            Log::error('获取音色列表失败', [
+                'error' => $e->getMessage()
+            ]);
+            return json([
+                'code' => 500,
+                'msg' => '获取失败: ' . $e->getMessage()
             ]);
         }
     }

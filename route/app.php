@@ -87,6 +87,8 @@ Route::group('api/V1', function () {
     Route::get('roleDraftInfo', 'app\controller\v1\ChatController@roleDraftInfo'); // 草稿详情
     Route::post('aiInspiration', 'app\controller\v1\ChatController@aiInspiration'); // AI灵感生成接口
     Route::post('recommendReply', 'app\controller\v1\ChatController@recommendReply'); // AI推荐回复接口
+    Route::post('textToSpeech', 'app\controller\v1\ChatController@textToSpeech'); // 文本转语音接口
+    Route::get('getVoices', 'app\controller\v1\ChatController@getVoices'); // 获取可用音色列表
 
     Route::post('saveIncantation', 'app\controller\v1\UserController@saveIncantation'); // 保存咒语
     Route::get('getIncantationList', 'app\controller\v1\UserController@getIncantationList'); // 获取咒语列表
