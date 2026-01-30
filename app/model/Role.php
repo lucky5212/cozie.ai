@@ -116,6 +116,7 @@ class Role extends Model
                 $query = $this->alias('r')
                     ->where(['r.user_id' => $userId])
                     ->where($where)
+                    ->join('role_user_chat ruc', 'r.id = ruc.role_id AND ruc.user_id = r.user_id', 'left')
                     ->field([
                         'r.id',
                         'r.name',
